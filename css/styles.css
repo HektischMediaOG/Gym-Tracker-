@@ -328,3 +328,45 @@ summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.9
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
   border-radius: 8px; padding: 4px 9px; font: inherit; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; cursor: pointer;
 }
+
+/* Ernährung – Tagebuch */
+.micro-row { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+.micro-row strong { color: var(--text); }
+.food-item .kcal { font-weight: 700; font-variant-numeric: tabular-nums; }
+a.food-item:active { background: var(--surface-2); }
+.meal-actions { margin-top: 8px; }
+.bar.water span { background: var(--protein); }
+.chart .wbar { fill: var(--surface-2); }
+.chart .wbar.sel { fill: var(--accent); }
+.chart .wbar.over { fill: var(--danger); }
+.chart .target-line { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 1.2; }
+.key.dash { background: none; border-top: 2px dashed var(--muted); height: 0; }
+
+/* Ernährung – Hinzufügen */
+.subnav.four { grid-template-columns: repeat(4, 1fr); }
+.subnav button { border: 0; background: transparent; font: inherit; text-align: center; padding: 9px 4px; border-radius: 10px; font-weight: 700; color: var(--muted); cursor: pointer; }
+.subnav button.active { background: var(--surface); color: var(--text); }
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-row input { flex: 1; }
+.food-row { width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.food-row strong { overflow: hidden; text-overflow: ellipsis; }
+button.plain { all: unset; display: flex; flex-direction: column; flex: 1; min-width: 0; cursor: pointer; }
+.nowrap { white-space: nowrap; }
+.list + .label, .label { margin-top: 12px; }
+.scanner { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; aspect-ratio: 4 / 3; margin-bottom: 8px; }
+.scanner video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-frame { position: absolute; inset: 30% 12%; border: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 0 0 999px rgb(0 0 0 / 0.35); }
+.ai-item { border-top: 1px solid var(--border); padding: 10px 0; }
+.ai-head { display: flex; align-items: center; gap: 8px; }
+.ai-head strong { flex: 1; }
+.ai-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: center; margin-top: 6px; }
+.ai-photo { position: relative; margin-top: 8px; }
+.ai-photo img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; display: block; }
+.ai-photo .icon-btn { position: absolute; top: 8px; right: 8px; background: var(--surface); }
+.draft-values { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 6px; margin: 12px 0; }
+.dv { background: var(--surface-2); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; align-items: center; }
+.dv .big { font-size: 1.5rem; }
+.dv span.muted { font-size: 0.72rem; }
+.icon-btn.fav { color: var(--muted); font-size: 1.2rem; }
+.icon-btn.fav.on { color: var(--carbs); }
+.table td.indent { padding-left: 14px; color: var(--muted); }

@@ -19,7 +19,7 @@ export function defaultState() {
       startDate: today(),
       adjustments: [], // {date, from, to, observed, note}
     },
-    settings: { increment: 2.5, adaptiveWindow: 21, lang: 'en' },
+    settings: { increment: 2.5, adaptiveWindow: 21, lang: 'en', waterTarget: 2500 },
     plan: { days: myPlanDays() },
     sessions: [],
     activeSession: null,
@@ -27,6 +27,8 @@ export function defaultState() {
     foods: [], // {id, date, meal, name, amount, kcal, protein, carbs, fat}
     foodLibrary: [], // {id, name, kcal, protein, carbs, fat} je 100 g
     incompleteDays: [], // Tage, die nicht in die Anpassung einfließen sollen
+    water: {}, // ml je Tag
+    savedMeals: [], // {id, name, items: [Einträge ohne id/date/meal]}
     news: { seen: [] }, // IDs bereits angezeigter Studien
     migrations: { planWeekdays: true, planWeekdaysFix: true, renameForearmRotation: true },
   };
@@ -143,12 +145,9 @@ export function foodsOn(date) {
 }
 
 export function totalsFor(date) {
-  const t = { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+  const t = { kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0, sugar: 0, salt: 0 };
   for (const f of foodsOn(date)) {
-    t.kcal += f.kcal || 0;
-    t.protein += f.protein || 0;
-    t.carbs += f.carbs || 0;
-    t.fat += f.fat || 0;
+    for (const k of Object.keys(t)) t[k] += f[k] || 0;
   }
   return t;
 }

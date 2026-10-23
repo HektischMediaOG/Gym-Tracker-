@@ -2,6 +2,7 @@ import { state, replaceState, defaultState } from '../store.js';
 import { esc, today, parseNum, fmtInput } from '../util.js';
 import { toast, navigate, applyLang } from '../app.js';
 import { L, getLang } from '../i18n.js';
+import { getApiKey, setApiKey } from '../ai.js';
 
 export function render() {
   const s = state.settings;
@@ -33,6 +34,15 @@ export function render() {
     </section>
 
     <section class="card">
+      <h3>${L('Ernährung', 'Nutrition')}</h3>
+      <label class="field"><span>${L('Wasserziel (ml pro Tag)', 'Water target (ml per day)')}</span>
+        <input id="s-water" inputmode="numeric" value="${esc(s.waterTarget || 2500)}" data-change="settingField" data-field="waterTarget"></label>
+      <label class="field"><span>${L('Anthropic-API-Schlüssel für die KI-Schätzung', 'Anthropic API key for AI estimates')}</span>
+        <input id="s-apikey" type="password" autocomplete="off" placeholder="sk-ant-…" value="${esc(getApiKey())}" data-change="apiKey"></label>
+      <p class="small muted">${L('Den Schlüssel bekommst du unter console.anthropic.com → API Keys. Er wird nur auf diesem Gerät gespeichert und nicht ins Backup exportiert. Tipp: In der Console ein monatliches Ausgabenlimit setzen. Eine Schätzung kostet ca. 1 Cent.', 'Get a key at console.anthropic.com → API Keys. It is stored only on this device and is not included in backups. Tip: set a monthly spend limit in the Console. One estimate costs about 1 cent.')}</p>
+    </section>
+
+    <section class="card">
       <h3>${L('Daten & Backup', 'Data & backup')}</h3>
       <p class="small">${L(`Alle Daten liegen nur auf diesem Gerät (${counts}). Wenn du den Browser-Speicher löschst oder das Handy wechselst, sind sie weg – exportiere deshalb regelmäßig ein Backup, z. B. in iCloud/Google Drive.`, `All data is stored only on this device (${counts}). If you clear browser storage or switch phones, it is gone – so export a backup regularly, e.g. to iCloud/Google Drive.`)}</p>
       <button class="btn primary block" data-action="exportData">${L('Backup exportieren', 'Export backup')}</button>
@@ -55,6 +65,10 @@ export const actions = {
   setLang(el) {
     state.settings.lang = el.dataset.lang;
     applyLang();
+  },
+  apiKey(el) {
+    setApiKey(el.value);
+    toast(el.value ? L('Schlüssel gespeichert', 'Key saved') : L('Schlüssel entfernt', 'Key removed'));
   },
   settingField(el) {
     const v = parseNum(el.value);

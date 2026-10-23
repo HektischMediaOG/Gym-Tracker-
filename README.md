@@ -14,9 +14,11 @@ Mobile Web-App (PWA) für Trainingsplan & Progress, Körpergewicht, Ernährung u
 - Tägliches Wiegen, 7-Tage-Durchschnitt, Trend in kg/Woche (lineare Regression über 3 Wochen)
 
 **Ernährung**
-- Einträge nach Mahlzeit mit kcal, Protein, Kohlenhydraten, Fett – entweder pro Portion oder pro 100 g mit Menge
-- Gespeicherte Lebensmittel zum schnellen Eintragen, „Vortag kopieren“
-- Fortschrittsbalken gegen dein Tagesziel
+- Tagebuch nach Mahlzeiten mit kcal, Makros, Ballaststoffen, Zucker und Salz; Einträge nachträglich bearbeiten
+- Barcode-Scanner (Kamera, Chrome/Android) und Produktsuche über [Open Food Facts](https://world.openfoodfacts.org); unbekannte Produkte einmal selbst eintragen, danach erkennt der Scanner sie
+- KI-Schätzung per Text oder Foto über die Claude API (eigener API-Schlüssel, nur auf dem Gerät gespeichert, nicht im Backup)
+- „Meine Lebensmittel“ mit Zuletzt/Favoriten, gespeicherte Mahlzeiten, „Vortag kopieren“, Schnell-Eintrag
+- Wasser-Tracker und 7-Tage-Überblick gegen das Kalorienziel
 
 **Ziele & Kalorienrechner**
 - Ziele: Abnehmen/Muskeln erhalten, Rekomposition, Halten, Lean Bulk – jeweils mit wählbarem Tempo in % Körpergewicht pro Woche
@@ -47,7 +49,7 @@ Alles liegt im `localStorage` des Browsers. Unter Einstellungen (Zahnrad) lässt
 
 ## Entwicklung
 
-Kein Build-Schritt, reines HTML/CSS/JavaScript (ES-Module).
+Kein Build-Schritt, reines HTML/CSS/JavaScript (ES-Module). Einzige Ausnahme ist `vendor/anthropic-sdk.mjs`, das gebündelte Anthropic-SDK für die KI-Schätzung – neu bauen mit `scripts/build-vendor.sh`.
 
 ```bash
 npm start   # lokaler Server auf http://localhost:8080
