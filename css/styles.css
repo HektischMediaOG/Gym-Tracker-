@@ -309,3 +309,4 @@ summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.9
   .grid4 { grid-template-columns: 1fr 1fr; }
   .grid3 { grid-template-columns: 1fr 1fr; }
 }
+.pick-list { display: grid; gap: 8px; margin: 10px 0 4px; }

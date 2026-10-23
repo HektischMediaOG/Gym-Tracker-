@@ -5,7 +5,7 @@ import { bar } from '../chart.js';
 import { todaysDays } from './training.js';
 import { currentTargets } from './food.js';
 import { adaptiveAnalysis, lastAdjustment } from './goals.js';
-import { daysBetween } from '../util.js';
+import { daysBetween, normName } from '../util.js';
 
 export function render() {
   const d = today();
@@ -29,14 +29,27 @@ export function render() {
         <p class="muted small">${day.exercises.filter((e) => e.name).map((e) => esc(e.name)).join(' · ') || 'Keine Übungen'}</p>
         <button class="btn primary block" data-action="startWorkout" data-day="${day.id}" ${day.exercises.length ? '' : 'disabled'}>Training starten</button></section>`)
       .join('');
-  } else if (!state.plan.days.length) {
-    trainingCard = `<a class="card hero" href="#/training"><p class="label">Los geht’s</p><h2>Trainingsplan anlegen</h2><span class="muted small">Übungen, Sätze, Wiederholungen, Gewichte →</span></a>`;
+  } else if (!state.plan.days.some((x) => x.weekdays.length)) {
+    // Ohne feste Wochentage nicht "Ruhetag" behaupten, sondern Auswahl anbieten
+    trainingCard = state.plan.days.length
+      ? `<section class="card hero"><p class="label">Heute</p><h2>Welches Training?</h2>
+          <div class="pick-list">${state.plan.days.map((day) => startButton(day, esc(day.name))).join('')}</div>
+          <p class="small muted">Tipp: Unter Training → Bearbeiten Wochentage eintragen, dann steht hier automatisch das Training des Tages.</p></section>`
+      : `<a class="card hero" href="#/training"><p class="label">Los geht’s</p><h2>Trainingsplan anlegen</h2><span class="muted small">Übungen, Sätze, Wiederholungen, Gewichte →</span></a>`;
   } else {
     const next = nextTrainingDay(d);
     trainingCard = `<section class="card hero rest"><p class="label">Heute</p><h2>Ruhetag</h2>
       ${next ? `<p class="muted small">Nächstes Training: ${esc(next.day.name)} (${fmtDateRelative(next.date)})</p>` : ''}
       <a class="btn ghost small" href="#/training">Trotzdem trainieren</a></section>`;
   }
+
+  // Verpasste Trainings dieser Woche (Mo bis gestern) zum Nachholen anbieten
+  const missed = state.activeSession ? [] : missedThisWeek(d);
+  const missedCard = missed.length
+    ? `<section class="card"><h3>Diese Woche noch offen</h3>
+        <div class="pick-list">${missed.map(({ day, date }) => startButton(day, `${esc(day.name)} nachholen <span class="muted small">(${WEEKDAYS_LONG[isoWeekday(date) - 1]})</span>`, 'ghost')).join('')}</div>
+      </section>`
+    : '';
 
   // Ernährung heute
   const foodCard = `<a class="card" href="#/food">
@@ -80,7 +93,24 @@ export function render() {
   const goalLine = `<p class="muted small center">Ziel: ${esc(GOALS[state.goal.type].label)}${state.goal.ratePct ? ` · ${fmtSigned(state.goal.ratePct, 2)} %/Woche` : ''}</p>`;
 
   return `<h1 class="page-title">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })}</h1>
-    ${trainingCard}${checkin}${foodCard}${weightCard}${goalLine}`;
+    ${trainingCard}${missedCard}${checkin}${foodCard}${weightCard}${goalLine}`;
+}
+
+function startButton(day, label, style = 'primary') {
+  return `<button class="btn ${style} block" data-action="startWorkout" data-day="${day.id}" ${day.exercises.length ? '' : 'disabled'}>${label}</button>`;
+}
+
+export function missedThisWeek(date) {
+  const weekStart = addDays(date, -(isoWeekday(date) - 1));
+  const weekSessions = state.sessions.filter((s) => s.date >= weekStart && s.date <= date);
+  const out = [];
+  for (const day of state.plan.days) {
+    const done = weekSessions.some((s) => s.dayId === day.id || normName(s.dayName) === normName(day.name));
+    if (done) continue;
+    const planned = [...day.weekdays].sort().map((wd) => addDays(weekStart, wd - 1)).filter((x) => x < date);
+    if (planned.length) out.push({ day, date: planned[0] });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 function nextTrainingDay(from) {

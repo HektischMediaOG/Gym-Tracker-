@@ -26,6 +26,7 @@ export function defaultState() {
     foods: [], // {id, date, meal, name, amount, kcal, protein, carbs, fat}
     foodLibrary: [], // {id, name, kcal, protein, carbs, fat} je 100 g
     incompleteDays: [], // Tage, die nicht in die Anpassung einfließen sollen
+    migrations: { planWeekdays: true },
   };
 }
 
@@ -44,11 +45,28 @@ function merge(base, loaded) {
   return out;
 }
 
+// Einmalige Korrekturen an bereits gespeicherten Daten
+function migrate(s) {
+  if (!s.migrations.planWeekdays) {
+    // Plan-Vorlage hatte anfangs keine Wochentage → Mo–Fr nachtragen, wenn noch leer
+    const template = new Map(myPlanDays().map((d) => [normName(d.name), d.weekdays]));
+    for (const d of s.plan.days) {
+      if (!d.weekdays.length && template.has(normName(d.name))) d.weekdays = [...template.get(normName(d.name))];
+    }
+    s.migrations.planWeekdays = true;
+  }
+  return s;
+}
+
 export function loadState() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return defaultState();
-    return merge(defaultState(), JSON.parse(raw));
+    const loaded = JSON.parse(raw);
+    const merged = merge(defaultState(), loaded);
+    // Nicht mit den Defaults mischen, sonst gelten alte Daten als schon migriert
+    merged.migrations = { ...(loaded.migrations || {}) };
+    return migrate(merged);
   } catch (e) {
     console.error('State konnte nicht geladen werden', e);
     return defaultState();
@@ -162,6 +180,7 @@ export function myPlanDays() {
   return [
     newDay({
       name: 'Chest Day 1',
+      weekdays: [1],
       exercises: [
         ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
         ex('Kurzhantel Schrägbankdrücken', 2, 7, 30, { rest: 180, notes: 'Gewicht pro Hantel' }),
@@ -173,6 +192,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Back Day 1',
+      weekdays: [2],
       exercises: [
         ex('Kreuzheben', 2, 10, 120, { rest: 180 }),
         ex('Latzug', 2, 10, 72),
@@ -185,6 +205,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Chest Day 2',
+      weekdays: [3],
       exercises: [
         ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
         ex('Chest Press Uni', 2, 7, 101, { rest: 180 }),
@@ -197,6 +218,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Back Day 2',
+      weekdays: [4],
       exercises: [
         ex('Latzug Maschine', 2, 10, 110),
         ex('Kabelrudern breit', 2, 10, 77),
@@ -208,6 +230,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Leg Day',
+      weekdays: [5],
       exercises: [
         ex('Beinbeuger', 2, 8, 80),
         ex('Kniebeugen', 2, 8, 75),
