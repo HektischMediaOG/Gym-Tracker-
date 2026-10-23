@@ -2,6 +2,7 @@ import { state, totalsFor, latestWeight } from '../store.js';
 import { movingAverage, weightTrend, GOALS } from '../calc.js';
 import { esc, today, addDays, fmtNum, fmtSigned, fmtDate, fmtDateRelative, isoWeekday, weekdayLong } from '../util.js';
 import { L } from '../i18n.js';
+import { exName } from '../names.js';
 import { bar } from '../chart.js';
 import { todaysDays } from './training.js';
 import { currentTargets } from './food.js';
@@ -28,7 +29,7 @@ export function render() {
   } else if (days.length) {
     trainingCard = days
       .map((day) => `<section class="card hero"><p class="label">${L('Heute dran', 'Today')} · ${weekdayLong(isoWeekday(d) - 1)}</p><h2>${esc(day.name)}</h2>
-        <p class="muted small">${day.exercises.filter((e) => e.name).map((e) => esc(e.name)).join(' · ') || L('Keine Übungen', 'No exercises')}</p>
+        <p class="muted small">${day.exercises.filter((e) => e.name).map((e) => esc(exName(e.name))).join(' · ') || L('Keine Übungen', 'No exercises')}</p>
         <button class="btn primary block" data-action="startWorkout" data-day="${day.id}" ${day.exercises.length ? '' : 'disabled'}>${L('Training starten', 'Start workout')}</button></section>`)
       .join('');
   } else if (!state.plan.days.some((x) => x.weekdays.length)) {

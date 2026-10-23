@@ -1,5 +1,5 @@
 // Offline-Cache für die App-Hülle. Bei Änderungen an Dateien VERSION erhöhen.
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CACHE = `gym-tracker-${VERSION}`;
 const ASSETS = [
   './',
@@ -12,6 +12,7 @@ const ASSETS = [
   './js/chart.js',
   './js/util.js',
   './js/i18n.js',
+  './js/names.js',
   './js/views/home.js',
   './js/views/training.js',
   './js/views/food.js',

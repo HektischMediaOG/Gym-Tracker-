@@ -2,6 +2,7 @@ import { state, findDay, lastPerformance, newDay, newExercise, myPlanDays } from
 import { suggestNext, e1rm, sessionVolume } from '../calc.js';
 import { esc, uid, today, addDays, parseNum, fmtNum, fmtDate, fmtDateRelative, isoWeekday, weekdayShort, normName, round, fmtInput } from '../util.js';
 import { L, locale } from '../i18n.js';
+import { exName, canonicalExName, noteText, canonicalNote } from '../names.js';
 import { lineChart } from '../chart.js';
 import { navigate, toast, startRestTimer } from '../app.js';
 
@@ -68,7 +69,7 @@ export function renderPlan() {
           const wd = d.weekdays.length ? [...d.weekdays].sort().map((w) => weekdayShort(w - 1)).join(', ') : L('kein fester Tag', 'no fixed day');
           const exList = d.exercises.length
             ? `<ul class="ex-mini">${d.exercises
-                .map((e) => `<li><span>${esc(e.name || L('Ohne Namen', 'Unnamed'))}</span><span class="muted">${setsLabel(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
+                .map((e) => `<li><span>${esc(exName(e.name) || L('Ohne Namen', 'Unnamed'))}</span><span class="muted">${setsLabel(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
                 .join('')}</ul>`
             : `<p class="muted">${L('Noch keine Übungen.', 'No exercises yet.')}</p>`;
           return `<section class="card">
@@ -105,7 +106,8 @@ export function renderDayEditor(id) {
 
   const exCards = d.exercises
     .map((e, i) => {
-      const f = (field, label, attrs = '', value = e[field]) =>
+      const shown = { name: exName(e.name), notes: noteText(e.notes) };
+      const f = (field, label, attrs = '', value = field in shown ? shown[field] : e[field]) =>
         `<label class="field"><span>${label}</span><input id="ex-${e.id}-${field}" ${attrs} value="${esc(fmtInput(value))}" data-input="exField" data-day="${d.id}" data-ex="${e.id}" data-field="${field}"></label>`;
       return `<section class="card ex-edit">
         <div class="card-head">
@@ -198,14 +200,14 @@ export function renderWorkout() {
       return `<section class="card">
         <div class="card-head">
           <div>
-            <h3><a href="#/exercise/${encodeURIComponent(ex.name)}">${esc(ex.name)}</a></h3>
+            <h3><a href="#/exercise/${encodeURIComponent(ex.name)}">${esc(exName(ex.name))}</a></h3>
             ${meta ? `<p class="muted small">${meta}</p>` : ''}
           </div>
           <button class="icon-btn danger" data-action="removeSessionEx" data-x="${xi}" aria-label="${L('Übung entfernen', 'Remove exercise')}">✕</button>
         </div>
         ${ex.last ? `<p class="small muted">${L('Letztes Mal', 'Last time')} (${fmtDateRelative(ex.last.date)}): ${esc(ex.last.summary)}</p>` : `<p class="small muted">${ex.sets.some((x) => x.weight) ? L('Erstes Mal – Werte aus deinem Plan.', 'First time – numbers from your plan.') : L('Erstes Mal – Startgewicht eintragen.', 'First time – enter a starting weight.')}</p>`}
         ${hint}
-        ${t.notes ? `<p class="small note">${esc(t.notes)}</p>` : ''}
+        ${t.notes ? `<p class="small note">${esc(noteText(t.notes))}</p>` : ''}
         <div class="sets">${rows}</div>
         <div class="row gap">
           <button class="btn ghost small" data-action="addSet" data-x="${xi}">+ ${L('Satz', 'Set')}</button>
@@ -223,7 +225,7 @@ export function renderWorkout() {
       <input id="add-ex-name" name="name" type="text" placeholder="${L('Übung hinzufügen', 'Add exercise')}" autocomplete="off" list="exercise-names">
       <button class="btn">+</button>
     </form>
-    <datalist id="exercise-names">${allExerciseNames().map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
+    <datalist id="exercise-names">${allExerciseNames().map((n) => `<option value="${esc(exName(n))}">`).join('')}</datalist>
     <section class="card">
       <label class="field"><span>${L('Notizen zum Training', 'Workout notes')}</span>
         <textarea id="session-notes" rows="2" data-input="sessionNotes" placeholder="${L('Wie lief’s? Schlaf, Energie, Schmerzen …', 'How did it go? Sleep, energy, pain …')}">${esc(s.notes || '')}</textarea>
@@ -262,7 +264,7 @@ export function renderHistory() {
   const names = allExerciseNames().filter((n) => state.sessions.some((s) => s.exercises.some((e) => normName(e.name) === normName(n))));
   const exList = names.length
     ? `<section class="card"><h3>${L('Übungen', 'Exercises')}</h3><div class="chips">${names
-        .map((n) => `<a class="chip" href="#/exercise/${encodeURIComponent(n)}">${esc(n)}</a>`)
+        .map((n) => `<a class="chip" href="#/exercise/${encodeURIComponent(n)}">${esc(exName(n))}</a>`)
         .join('')}</div></section>`
     : '';
 
@@ -286,7 +288,7 @@ export function renderSession(id) {
     .map((e) => {
       const best = Math.max(...e.sets.filter((x) => x.done).map((x) => e1rm(x.weight, x.reps)));
       return `<section class="card">
-        <h3><a href="#/exercise/${encodeURIComponent(e.name)}">${esc(e.name)}</a></h3>
+        <h3><a href="#/exercise/${encodeURIComponent(e.name)}">${esc(exName(e.name))}</a></h3>
         <table class="table"><tbody>
           ${e.sets.filter((x) => x.done).map((x, i) => `<tr><td class="muted">${i + 1}</td><td>${x.weight ? `${fmtNum(x.weight, 2)} kg` : L('Körpergewicht', 'Bodyweight')}</td><td>${x.reps ?? '?'} ${L('Wdh', 'reps')}</td></tr>`).join('')}
         </tbody></table>
@@ -303,14 +305,14 @@ export function renderSession(id) {
 }
 
 export function renderExercise(name) {
-  const key = normName(name);
+  const key = normName(canonicalExName(name));
   const entries = state.sessions
     .map((s) => ({ s, e: s.exercises.find((e) => normName(e.name) === key) }))
     .filter((x) => x.e && x.e.sets.some((st) => st.done))
     .sort((a, b) => a.s.date.localeCompare(b.s.date));
 
   if (!entries.length) {
-    return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a><h2>${esc(name)}</h2><p class="muted">${L('Noch keine Daten zu dieser Übung.', 'No data for this exercise yet.')}</p>`;
+    return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a><h2>${esc(exName(name))}</h2><p class="muted">${L('Noch keine Daten zu dieser Übung.', 'No data for this exercise yet.')}</p>`;
   }
 
   const points = entries.map(({ s, e }) => {
@@ -337,7 +339,7 @@ export function renderExercise(name) {
       );
 
   return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a>
-    <h2>${esc(entries[entries.length - 1].e.name)}</h2>
+    <h2>${esc(exName(entries[entries.length - 1].e.name))}</h2>
     <section class="card">
       ${chart}
       ${bodyweight ? `<p class="legend"><span class="key main"></span>${L('Max. Wiederholungen', 'Max reps')}</p>` : `<p class="legend"><span class="key main"></span>${L('Geschätztes 1RM', 'Estimated 1RM')} <span class="key soft"></span>${L('Schwerstes Gewicht', 'Heaviest weight')}</p>`}
@@ -397,7 +399,7 @@ export const actions = {
   deleteEx(el) {
     const d = dayOf(el);
     const ex = d.exercises.find((e) => e.id === el.dataset.ex);
-    if (ex?.name && !confirm(L(`„${ex.name}“ aus dem Plan entfernen?`, `Remove “${ex.name}” from the plan?`))) return false;
+    if (ex?.name && !confirm(L(`„${exName(ex.name)}“ aus dem Plan entfernen?`, `Remove “${exName(ex.name)}” from the plan?`))) return false;
     d.exercises = d.exercises.filter((e) => e.id !== el.dataset.ex);
   },
   moveEx(el) {
@@ -412,7 +414,9 @@ export const actions = {
     const ex = d?.exercises.find((e) => e.id === el.dataset.ex);
     if (!ex) return;
     const f = el.dataset.field;
-    ex[f] = f === 'name' || f === 'notes' ? el.value : parseNum(el.value);
+    if (f === 'name') ex.name = canonicalExName(el.value);
+    else if (f === 'notes') ex.notes = canonicalNote(el.value);
+    else ex[f] = parseNum(el.value);
   },
 
   startWorkout(el) {
@@ -444,7 +448,7 @@ export const actions = {
       if (set.reps === null || set.reps === undefined) set.reps = ex.target?.repMin ?? null;
       const isLast = ex.sets.every((s) => s.done);
       // Pause 0 = Supersatz: kein Timer
-      startRestTimer(ex.target?.rest ?? 90, isLast ? `${ex.name} ${L('fertig', 'done')}` : `${ex.name} · ${L('Satz', 'Set')} ${Number(el.dataset.s) + 2}`);
+      startRestTimer(ex.target?.rest ?? 90, isLast ? `${exName(ex.name)} ${L('fertig', 'done')}` : `${exName(ex.name)} · ${L('Satz', 'Set')} ${Number(el.dataset.s) + 2}`);
     }
   },
   addSet(el) {
@@ -457,11 +461,12 @@ export const actions = {
   },
   removeSessionEx(el) {
     const ex = state.activeSession.exercises[el.dataset.x];
-    if (ex.sets.some((s) => s.done) && !confirm(L(`„${ex.name}“ samt erledigter Sätze entfernen?`, `Remove “${ex.name}” including completed sets?`))) return false;
+    if (ex.sets.some((s) => s.done) && !confirm(L(`„${exName(ex.name)}“ samt erledigter Sätze entfernen?`, `Remove “${exName(ex.name)}” including completed sets?`))) return false;
     state.activeSession.exercises.splice(Number(el.dataset.x), 1);
   },
   addSessionEx(form) {
-    const name = form.elements.name.value.trim();
+    // Übersetzte Namen wieder auf die gespeicherte Form bringen, damit der Verlauf zusammenbleibt
+    const name = canonicalExName(form.elements.name.value.trim());
     if (!name) return false;
     // Falls die Übung im Plan existiert, Zielwerte übernehmen
     const planEx = state.plan.days.flatMap((d) => d.exercises).find((e) => normName(e.name) === normName(name));
