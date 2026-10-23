@@ -3,6 +3,10 @@
 import { state, save } from '../store.js';
 import { esc, fmtDate } from '../util.js';
 import { render as rerender } from '../app.js';
+import { L } from '../i18n.js';
+
+const topicLabel = (id) => ({ strength: L('Krafttraining', 'Strength'), nutrition: L('Ernährung', 'Nutrition'), recovery: L('Regeneration', 'Recovery') })[id] || id;
+const typeLabel = (t) => ({ 'Meta-Analyse': L('Meta-Analyse', 'Meta-analysis'), 'Systematischer Review': L('Systematischer Review', 'Systematic review'), RCT: 'RCT', Review: 'Review', Studie: L('Studie', 'Study') })[t] || t;
 
 let news = null; // {updatedAt, topics, items, errors}
 let loading = null;
@@ -47,9 +51,9 @@ function markAllSeen() {
 export function render() {
   if (!news) {
     if (!failed) loadNews();
-    return `<h1 class="page-title">Neue Studien</h1>
-      <p class="muted center">${failed ? 'Studien konnten nicht geladen werden. Bist du offline?' : 'Lade …'}</p>
-      ${failed ? '<button class="btn block" data-action="reloadNews">Erneut versuchen</button>' : ''}`;
+    return `<h1 class="page-title">${L('Neue Studien', 'New research')}</h1>
+      <p class="muted center">${failed ? L('Studien konnten nicht geladen werden. Bist du offline?', 'Could not load studies. Are you offline?') : L('Lade …', 'Loading …')}</p>
+      ${failed ? `<button class="btn block" data-action="reloadNews">${L('Erneut versuchen', 'Try again')}</button>` : ''}`;
   }
 
   if (!newThisVisit) {
@@ -58,9 +62,8 @@ export function render() {
     markAllSeen();
   }
 
-  const labels = Object.fromEntries((news.topics || []).map((t) => [t.id, t.label]));
   const items = news.items.filter((i) => topic === 'all' || i.topics.includes(topic));
-  const chips = [['all', 'Alle'], ...(news.topics || []).map((t) => [t.id, t.label])]
+  const chips = [['all', L('Alle', 'All')], ...(news.topics || []).map((t) => [t.id, topicLabel(t.id)])]
     .map(([id, label]) => `<button class="chip ${topic === id ? 'on' : ''}" data-action="newsTopic" data-topic="${id}">${esc(label)}</button>`)
     .join('');
 
@@ -69,23 +72,24 @@ export function render() {
         .map(
           (i) => `<article class="card news-item">
             <div class="news-meta">
-              <span class="badge type-${esc(i.type.toLowerCase().replace(/\s+/g, '-'))}">${esc(i.type)}</span>
-              ${i.topics.map((t) => `<span class="badge soft">${esc(labels[t] || t)}</span>`).join('')}
-              ${newThisVisit.has(i.id) ? '<span class="badge new">Neu</span>' : ''}
+              <span class="badge type-${esc(i.type.toLowerCase().replace(/\s+/g, '-'))}">${esc(typeLabel(i.type))}</span>
+              ${i.topics.map((t) => `<span class="badge soft">${esc(topicLabel(t))}</span>`).join('')}
+              ${newThisVisit.has(i.id) ? `<span class="badge new">${L('Neu', 'New')}</span>` : ''}
             </div>
             <h3><a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a></h3>
             <p class="small muted">${esc(i.journal)}${i.journal && i.date ? ' · ' : ''}${i.date ? fmtDate(i.date, { day: '2-digit', month: '2-digit', year: 'numeric' }) : ''}</p>
             ${i.authors ? `<p class="small muted">${esc(i.authors)}</p>` : ''}
             ${i.abstract ? `<details><summary>Abstract</summary><p class="small abstract">${esc(i.abstract)}</p></details>` : ''}
-            <a class="small link" href="${esc(i.url)}" target="_blank" rel="noopener">Studie öffnen ↗</a>
+            <a class="small link" href="${esc(i.url)}" target="_blank" rel="noopener">${L('Studie öffnen ↗', 'Open study ↗')}</a>
           </article>`
         )
         .join('')
-    : '<p class="muted center">Keine Studien in diesem Bereich.</p>';
+    : `<p class="muted center">${L('Keine Studien in diesem Bereich.', 'No studies in this area.')}</p>`;
 
-  return `<h1 class="page-title">Neue Studien</h1>
-    <p class="small muted">Meta-Analysen, Reviews und RCTs der letzten ${news.days || 60} Tage aus PubMed/Europe PMC${news.updatedAt ? ` (Stand ${fmtDate(news.updatedAt.slice(0, 10), { day: '2-digit', month: '2-digit' })})` : ''}. Titel und Abstracts sind englisch – Chrome übersetzt die Seite über ⋮ → Übersetzen.</p>
-    ${news.errors?.length ? `<p class="warn small">Nicht alle Bereiche konnten aktualisiert werden.</p>` : ''}
+  const stand = news.updatedAt ? ` (${L('Stand', 'as of')} ${fmtDate(news.updatedAt.slice(0, 10), { day: '2-digit', month: '2-digit' })})` : '';
+  return `<h1 class="page-title">${L('Neue Studien', 'New research')}</h1>
+    <p class="small muted">${L(`Meta-Analysen, Reviews und RCTs der letzten ${news.days || 60} Tage aus PubMed/Europe PMC${stand}. Titel und Abstracts sind englisch.`, `Meta-analyses, reviews and RCTs from the last ${news.days || 60} days from PubMed/Europe PMC${stand}.`)}</p>
+    ${news.errors?.length ? `<p class="warn small">${L('Nicht alle Bereiche konnten aktualisiert werden.', 'Not all areas could be updated.')}</p>` : ''}
     <div class="chips">${chips}</div>
     ${list}`;
 }

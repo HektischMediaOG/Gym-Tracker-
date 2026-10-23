@@ -1,51 +1,52 @@
 // Reine Rechenlogik (kein DOM, kein State) – wird auch von den Node-Tests genutzt.
 import { daysBetween, addDays, round } from './util.js';
+import { L } from './i18n.js';
 
 // Faustregel: 1 kg Körpergewicht ≈ 7700 kcal. Für Fett exakter als für "Waage-Gewicht",
 // deshalb nutzt die adaptive Anpassung immer den Trend über mehrere Wochen.
 export const KCAL_PER_KG = 7700;
 
 export const ACTIVITY_LEVELS = [
-  { value: 1.2, label: 'Kaum aktiv', hint: 'Bürojob, kaum Bewegung, kein Sport' },
-  { value: 1.375, label: 'Leicht aktiv', hint: '1–3× Training/Woche oder viel Gehen' },
-  { value: 1.55, label: 'Mäßig aktiv', hint: '3–5× Training/Woche' },
-  { value: 1.725, label: 'Sehr aktiv', hint: '6–7× Training/Woche oder körperlicher Job' },
-  { value: 1.9, label: 'Extrem aktiv', hint: 'Harter körperlicher Job + tägliches Training' },
+  { value: 1.2, get label() { return L('Kaum aktiv', 'Sedentary'); }, get hint() { return L('Bürojob, kaum Bewegung, kein Sport', 'Desk job, little movement, no exercise'); } },
+  { value: 1.375, get label() { return L('Leicht aktiv', 'Lightly active'); }, get hint() { return L('1–3× Training/Woche oder viel Gehen', '1–3 workouts/week or lots of walking'); } },
+  { value: 1.55, get label() { return L('Mäßig aktiv', 'Moderately active'); }, get hint() { return L('3–5× Training/Woche', '3–5 workouts/week'); } },
+  { value: 1.725, get label() { return L('Sehr aktiv', 'Very active'); }, get hint() { return L('6–7× Training/Woche oder körperlicher Job', '6–7 workouts/week or physical job'); } },
+  { value: 1.9, get label() { return L('Extrem aktiv', 'Extremely active'); }, get hint() { return L('Harter körperlicher Job + tägliches Training', 'Hard physical job + daily training'); } },
 ];
 
 // ratePct = Ziel-Gewichtsänderung in % des Körpergewichts pro Woche
 export const GOALS = {
   cut: {
-    label: 'Abnehmen, Muskeln erhalten',
-    short: 'Diät',
-    description: 'Moderates Defizit, viel Protein, schwer weitertrainieren.',
+    get label() { return L('Abnehmen, Muskeln erhalten', 'Lose fat, keep muscle'); },
+    get short() { return L('Diät', 'Cut'); },
+    get description() { return L('Moderates Defizit, viel Protein, schwer weitertrainieren.', 'Moderate deficit, high protein, keep training heavy.'); },
     defaultRate: -0.5,
     rates: [-0.25, -0.5, -0.75, -1.0],
     proteinPerKg: 2.2,
     fatPerKg: 0.8,
   },
   recomp: {
-    label: 'Rekomposition',
-    short: 'Recomp',
-    description: 'Etwa Erhaltung: Fett runter, Muskeln rauf – langsam, aber ohne Diätphase.',
+    get label() { return L('Rekomposition', 'Recomposition'); },
+    get short() { return L('Recomp', 'Recomp'); },
+    get description() { return L('Etwa Erhaltung: Fett runter, Muskeln rauf – langsam, aber ohne Diätphase.', 'Around maintenance: lose fat, gain muscle – slow, but without a dieting phase.'); },
     defaultRate: 0,
     rates: [0, -0.1, -0.25],
     proteinPerKg: 2.2,
     fatPerKg: 0.8,
   },
   maintain: {
-    label: 'Gewicht halten',
-    short: 'Halten',
-    description: 'Erhaltungskalorien.',
+    get label() { return L('Gewicht halten', 'Maintain weight'); },
+    get short() { return L('Halten', 'Maintain'); },
+    get description() { return L('Erhaltungskalorien.', 'Maintenance calories.'); },
     defaultRate: 0,
     rates: [0],
     proteinPerKg: 1.8,
     fatPerKg: 0.9,
   },
   bulk: {
-    label: 'Muskelaufbau (Lean Bulk)',
-    short: 'Aufbau',
-    description: 'Kleiner Überschuss, damit möglichst wenig Fett dazukommt.',
+    get label() { return L('Muskelaufbau (Lean Bulk)', 'Build muscle (lean bulk)'); },
+    get short() { return L('Aufbau', 'Bulk'); },
+    get description() { return L('Kleiner Überschuss, damit möglichst wenig Fett dazukommt.', 'Small surplus to keep fat gain to a minimum.'); },
     defaultRate: 0.25,
     rates: [0.1, 0.25, 0.5],
     proteinPerKg: 1.8,
@@ -57,7 +58,7 @@ export function bmr({ sex, age, heightCm, weightKg, bodyFat }) {
   if (!weightKg) return null;
   if (bodyFat && bodyFat > 3 && bodyFat < 60) {
     const lbm = weightKg * (1 - bodyFat / 100);
-    return { value: 370 + 21.6 * lbm, method: 'Katch-McArdle (mit KFA)' };
+    return { value: 370 + 21.6 * lbm, method: L('Katch-McArdle (mit KFA)', 'Katch-McArdle (with body fat)') };
   }
   if (!age || !heightCm) return null;
   const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
@@ -86,17 +87,17 @@ export function computeTargets(profile, goal, weightKg) {
 
   const floor = profile.sex === 'f' ? 1200 : 1500;
   if (kcal < floor) {
-    warnings.push(`Unter ${floor} kcal wird es schwer, genug Nährstoffe und Protein unterzubringen – Ziel wurde auf ${floor} kcal begrenzt. Lieber eine langsamere Rate wählen.`);
+    warnings.push(L(`Unter ${floor} kcal wird es schwer, genug Nährstoffe und Protein unterzubringen – Ziel wurde auf ${floor} kcal begrenzt. Lieber eine langsamere Rate wählen.`, `Below ${floor} kcal it is hard to get enough nutrients and protein – target was capped at ${floor} kcal. Consider a slower rate.`));
     kcal = floor;
   }
   if (kcal < f.bmr && goal.ratePct < 0) {
-    warnings.push('Das Ziel liegt unter deinem Grundumsatz. Das ist möglich, aber auf Dauer hart – Muskelerhalt leidet bei zu großem Defizit.');
+    warnings.push(L('Das Ziel liegt unter deinem Grundumsatz. Das ist möglich, aber auf Dauer hart – Muskelerhalt leidet bei zu großem Defizit.', 'The target is below your BMR. Possible, but hard to sustain – muscle retention suffers with too large a deficit.'));
   }
   if (goal.ratePct <= -1) {
-    warnings.push('1 % pro Woche ist aggressiv. Für Muskelerhalt sind 0,5–0,75 % meist der bessere Kompromiss.');
+    warnings.push(L('1 % pro Woche ist aggressiv. Für Muskelerhalt sind 0,5–0,75 % meist der bessere Kompromiss.', '1% per week is aggressive. For keeping muscle, 0.5–0.75% is usually the better trade-off.'));
   }
   if (goal.ratePct >= 0.5) {
-    warnings.push('Mehr als ~0,25–0,5 % pro Woche bringt bei Fortgeschrittenen vor allem mehr Fett, nicht mehr Muskeln.');
+    warnings.push(L('Mehr als ~0,25–0,5 % pro Woche bringt bei Fortgeschrittenen vor allem mehr Fett, nicht mehr Muskeln.', 'More than ~0.25–0.5% per week mostly adds fat, not muscle, for experienced lifters.'));
   }
 
   kcal = round(kcal / 10) * 10;
@@ -107,7 +108,7 @@ export function computeTargets(profile, goal, weightKg) {
   if (fat < minFat) fat = minFat;
   const carbs = Math.max(0, round((kcal - protein * 4 - fat * 9) / 4));
   if (kcal - protein * 4 - fat * 9 < 0) {
-    warnings.push('Protein und Fett füllen das Kalorienziel schon komplett aus – Protein- oder Fett-Faktor senken.');
+    warnings.push(L('Protein und Fett füllen das Kalorienziel schon komplett aus – Protein- oder Fett-Faktor senken.', 'Protein and fat already fill the whole calorie target – lower the protein or fat factor.'));
   }
 
   return {
@@ -189,9 +190,12 @@ export function analyzeAdaptive({ weights, intakeByDay, endDate, windowDays, cur
 
   const minLogged = Math.ceil(windowDays * 0.6);
   const issues = [];
-  if (!trend || trend.count < 6) issues.push(`Mindestens 6 Wiegungen im Zeitraum nötig (aktuell ${trend ? trend.count : weights.filter((w) => w.date >= start).length}).`);
-  else if (trend.spanDays < Math.min(13, windowDays - 1)) issues.push(`Die Wiegungen müssen mindestens 2 Wochen abdecken (aktuell ${trend.spanDays} Tage).`);
-  if (loggedDays < minLogged) issues.push(`Mindestens ${minLogged} vollständig geloggte Ernährungstage nötig (aktuell ${loggedDays}).`);
+  if (!trend || trend.count < 6) {
+    const n = trend ? trend.count : weights.filter((w) => w.date >= start).length;
+    issues.push(L(`Mindestens 6 Wiegungen im Zeitraum nötig (aktuell ${n}).`, `At least 6 weigh-ins needed in this period (currently ${n}).`));
+  }
+  else if (trend.spanDays < Math.min(13, windowDays - 1)) issues.push(L(`Die Wiegungen müssen mindestens 2 Wochen abdecken (aktuell ${trend.spanDays} Tage).`, `Weigh-ins must cover at least 2 weeks (currently ${trend.spanDays} days).`));
+  if (loggedDays < minLogged) issues.push(L(`Mindestens ${minLogged} vollständig geloggte Ernährungstage nötig (aktuell ${loggedDays}).`, `At least ${minLogged} fully logged food days needed (currently ${loggedDays}).`));
 
   const base = { windowDays, start, endDate, trend, loggedDays, avgIntake, minLogged };
   if (issues.length) return { ...base, ok: false, issues };
@@ -202,7 +206,7 @@ export function analyzeAdaptive({ weights, intakeByDay, endDate, windowDays, cur
       ...base,
       ok: false,
       observedTdee,
-      issues: [`Errechneter Verbrauch von ${round(observedTdee)} kcal ist unplausibel – wahrscheinlich fehlen Einträge im Food-Log.`],
+      issues: [L(`Errechneter Verbrauch von ${round(observedTdee)} kcal ist unplausibel – wahrscheinlich fehlen Einträge im Food-Log.`, `Calculated expenditure of ${round(observedTdee)} kcal is implausible – food log entries are probably missing.`)],
     };
   }
 

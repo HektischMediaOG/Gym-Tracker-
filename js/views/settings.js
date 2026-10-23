@@ -1,45 +1,61 @@
 import { state, replaceState, defaultState } from '../store.js';
 import { esc, today, parseNum, fmtInput } from '../util.js';
-import { toast, navigate } from '../app.js';
+import { toast, navigate, applyLang } from '../app.js';
+import { L, getLang } from '../i18n.js';
 
 export function render() {
   const s = state.settings;
-  const counts = `${state.sessions.length} Trainings · ${state.weights.length} Wiegungen · ${state.foods.length} Essens-Einträge`;
-  return `<h1 class="page-title">Einstellungen</h1>
+  const counts = L(
+    `${state.sessions.length} Trainings · ${state.weights.length} Wiegungen · ${state.foods.length} Essens-Einträge`,
+    `${state.sessions.length} workouts · ${state.weights.length} weigh-ins · ${state.foods.length} food entries`
+  );
+  const lang = getLang();
+  return `<h1 class="page-title">${L('Einstellungen', 'Settings')}</h1>
+    <section class="card">
+      <h3>${L('Sprache', 'Language')}</h3>
+      <div class="seg">
+        <button class="${lang === 'en' ? 'on' : ''}" data-action="setLang" data-lang="en">English</button>
+        <button class="${lang === 'de' ? 'on' : ''}" data-action="setLang" data-lang="de">Deutsch</button>
+      </div>
+    </section>
+
     <section class="card">
       <h3>Training</h3>
       <div class="grid2">
-        <label class="field"><span>Gewichtssteigerung (kg)</span>
+        <label class="field"><span>${L('Gewichtssteigerung (kg)', 'Weight increment (kg)')}</span>
           <input id="s-inc" inputmode="decimal" value="${esc(fmtInput(s.increment))}" data-change="settingField" data-field="increment"></label>
-        <label class="field"><span>Zeitraum Anpassung</span>
+        <label class="field"><span>${L('Zeitraum Anpassung', 'Adjustment window')}</span>
           <select id="s-window" data-change="settingField" data-field="adaptiveWindow">
-            ${[14, 21, 28].map((d) => `<option value="${d}" ${d === s.adaptiveWindow ? 'selected' : ''}>${d} Tage</option>`).join('')}
+            ${[14, 21, 28].map((d) => `<option value="${d}" ${d === s.adaptiveWindow ? 'selected' : ''}>${d} ${L('Tage', 'days')}</option>`).join('')}
           </select></label>
       </div>
-      <p class="small muted">Die Steigerung wird vorgeschlagen, sobald du bei einer Übung alle Sätze am oberen Ende der Wiederholungsspanne schaffst. Kürzerer Anpassungs-Zeitraum = reagiert schneller, aber anfälliger für Wasserschwankungen.</p>
+      <p class="small muted">${L('Die Steigerung wird vorgeschlagen, sobald du bei einer Übung alle Sätze am oberen Ende der Wiederholungsspanne schaffst. Kürzerer Anpassungs-Zeitraum = reagiert schneller, aber anfälliger für Wasserschwankungen.', 'The increment is suggested once you hit the top of the rep range in all sets of an exercise. A shorter adjustment window reacts faster but is more sensitive to water swings.')}</p>
     </section>
 
     <section class="card">
-      <h3>Daten & Backup</h3>
-      <p class="small">Alle Daten liegen nur auf diesem Gerät (${counts}). Wenn du den Browser-Speicher löschst oder das Handy wechselst, sind sie weg – exportiere deshalb regelmäßig ein Backup, z. B. in iCloud/Google Drive.</p>
-      <button class="btn primary block" data-action="exportData">Backup exportieren</button>
-      <label class="btn ghost block file-btn">Backup importieren<input type="file" accept="application/json,.json" id="import-file" data-change="importData" hidden></label>
+      <h3>${L('Daten & Backup', 'Data & backup')}</h3>
+      <p class="small">${L(`Alle Daten liegen nur auf diesem Gerät (${counts}). Wenn du den Browser-Speicher löschst oder das Handy wechselst, sind sie weg – exportiere deshalb regelmäßig ein Backup, z. B. in iCloud/Google Drive.`, `All data is stored only on this device (${counts}). If you clear browser storage or switch phones, it is gone – so export a backup regularly, e.g. to iCloud/Google Drive.`)}</p>
+      <button class="btn primary block" data-action="exportData">${L('Backup exportieren', 'Export backup')}</button>
+      <label class="btn ghost block file-btn">${L('Backup importieren', 'Import backup')}<input type="file" accept="application/json,.json" id="import-file" data-change="importData" hidden></label>
     </section>
 
     <section class="card">
-      <h3>Als App installieren</h3>
-      <p class="small"><strong>iPhone:</strong> In Safari öffnen → Teilen-Symbol → „Zum Home-Bildschirm“.<br>
-      <strong>Android:</strong> In Chrome öffnen → Menü ⋮ → „App installieren“.</p>
-      <p class="small muted">Danach startet die App im Vollbild und funktioniert auch offline im Gym.</p>
+      <h3>${L('Als App installieren', 'Install as app')}</h3>
+      <p class="small">${L('<strong>iPhone:</strong> In Safari öffnen → Teilen-Symbol → „Zum Home-Bildschirm“.<br><strong>Android:</strong> In Chrome öffnen → Menü ⋮ → „App installieren“.', '<strong>iPhone:</strong> Open in Safari → Share icon → “Add to Home Screen”.<br><strong>Android:</strong> Open in Chrome → menu ⋮ → “Install app”.')}</p>
+      <p class="small muted">${L('Danach startet die App im Vollbild und funktioniert auch offline im Gym.', 'It then launches full screen and also works offline at the gym.')}</p>
     </section>
 
     <section class="card">
-      <h3>Zurücksetzen</h3>
-      <button class="btn ghost danger block" data-action="resetAll">Alle Daten löschen</button>
+      <h3>${L('Zurücksetzen', 'Reset')}</h3>
+      <button class="btn ghost danger block" data-action="resetAll">${L('Alle Daten löschen', 'Delete all data')}</button>
     </section>`;
 }
 
 export const actions = {
+  setLang(el) {
+    state.settings.lang = el.dataset.lang;
+    applyLang();
+  },
   settingField(el) {
     const v = parseNum(el.value);
     if (v === null || v < 0) return;
@@ -64,14 +80,15 @@ export const actions = {
       try {
         const data = JSON.parse(text);
         if (!data || typeof data !== 'object' || !('plan' in data || 'sessions' in data || 'weights' in data)) {
-          throw new Error('Kein Gym-Tracker-Backup');
+          throw new Error(L('Kein Gym-Tracker-Backup', 'Not a Gym Tracker backup'));
         }
-        if (!confirm('Backup importieren? Die aktuellen Daten auf diesem Gerät werden ersetzt.')) return;
+        if (!confirm(L('Backup importieren? Die aktuellen Daten auf diesem Gerät werden ersetzt.', 'Import backup? The current data on this device will be replaced.'))) return;
         replaceState(data);
-        toast('Backup importiert');
+        toast(L('Backup importiert', 'Backup imported'));
+        applyLang();
         navigate('#/');
       } catch (e) {
-        alert(`Import fehlgeschlagen: ${e.message}`);
+        alert(`${L('Import fehlgeschlagen', 'Import failed')}: ${e.message}`);
       } finally {
         el.value = '';
       }
@@ -79,8 +96,8 @@ export const actions = {
     return false;
   },
   resetAll() {
-    if (!confirm('Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.')) return false;
-    if (!confirm('Sicher? Vorher besser ein Backup exportieren.')) return false;
+    if (!confirm(L('Wirklich ALLE Daten löschen? Das kann nicht rückgängig gemacht werden.', 'Really delete ALL data? This cannot be undone.'))) return false;
+    if (!confirm(L('Sicher? Vorher besser ein Backup exportieren.', 'Sure? Better export a backup first.'))) return false;
     replaceState(defaultState());
     navigate('#/');
   },

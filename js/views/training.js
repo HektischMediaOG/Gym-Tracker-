@@ -1,13 +1,14 @@
 import { state, findDay, lastPerformance, newDay, newExercise, myPlanDays } from '../store.js';
 import { suggestNext, e1rm, sessionVolume } from '../calc.js';
-import { esc, uid, today, addDays, parseNum, fmtNum, fmtDate, fmtDateRelative, isoWeekday, WEEKDAYS_SHORT, normName, round, fmtInput } from '../util.js';
+import { esc, uid, today, addDays, parseNum, fmtNum, fmtDate, fmtDateRelative, isoWeekday, weekdayShort, normName, round, fmtInput } from '../util.js';
+import { L, locale } from '../i18n.js';
 import { lineChart } from '../chart.js';
 import { navigate, toast, startRestTimer } from '../app.js';
 
 function subnav(active) {
   return `<nav class="subnav">
     <a href="#/training" class="${active === 'plan' ? 'active' : ''}">Plan</a>
-    <a href="#/history" class="${active === 'history' ? 'active' : ''}">Verlauf</a>
+    <a href="#/history" class="${active === 'history' ? 'active' : ''}">${L('Verlauf', 'History')}</a>
   </nav>`;
 }
 
@@ -16,8 +17,8 @@ function activeBanner() {
   if (!s) return '';
   const done = s.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0);
   return `<a class="banner" href="#/workout">
-    <strong>Training läuft: ${esc(s.dayName)}</strong>
-    <span>${done} Sätze erledigt · fortsetzen →</span>
+    <strong>${L('Training läuft', 'Workout in progress')}: ${esc(s.dayName)}</strong>
+    <span>${done} ${L('Sätze erledigt · fortsetzen →', 'sets done · continue →')}</span>
   </a>`;
 }
 
@@ -29,7 +30,7 @@ function repRange(ex) {
 
 function setsLabel(ex) {
   const range = repRange(ex);
-  return range ? `${ex.sets || '?'} × ${range}` : `${ex.sets || '?'} Sätze`;
+  return range ? `${ex.sets || '?'} × ${range}` : `${ex.sets || '?'} ${L('Sätze', 'sets')}`;
 }
 
 function fmtRest(sec) {
@@ -42,7 +43,7 @@ function fmtRest(sec) {
 function setsSummary(sets) {
   return sets
     .filter((s) => s.done)
-    .map((s) => (s.weight ? `${fmtNum(s.weight, 2)}×${s.reps ?? '?'}` : `${s.reps ?? '?'} Wdh`))
+    .map((s) => (s.weight ? `${fmtNum(s.weight, 2)}×${s.reps ?? '?'}` : `${s.reps ?? '?'} ${L('Wdh', 'reps')}`))
     .join(' · ');
 }
 
@@ -64,42 +65,42 @@ export function renderPlan() {
   const list = days.length
     ? days
         .map((d) => {
-          const wd = d.weekdays.length ? [...d.weekdays].sort().map((w) => WEEKDAYS_SHORT[w - 1]).join(', ') : 'kein fester Tag';
+          const wd = d.weekdays.length ? [...d.weekdays].sort().map((w) => weekdayShort(w - 1)).join(', ') : L('kein fester Tag', 'no fixed day');
           const exList = d.exercises.length
             ? `<ul class="ex-mini">${d.exercises
-                .map((e) => `<li><span>${esc(e.name || 'Ohne Namen')}</span><span class="muted">${setsLabel(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
+                .map((e) => `<li><span>${esc(e.name || L('Ohne Namen', 'Unnamed'))}</span><span class="muted">${setsLabel(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
                 .join('')}</ul>`
-            : '<p class="muted">Noch keine Übungen.</p>';
+            : `<p class="muted">${L('Noch keine Übungen.', 'No exercises yet.')}</p>`;
           return `<section class="card">
             <div class="card-head">
               <div><h3>${esc(d.name)}</h3><p class="muted small">${wd}</p></div>
-              <a class="btn ghost small" href="#/plan/${d.id}">Bearbeiten</a>
+              <a class="btn ghost small" href="#/plan/${d.id}">${L('Bearbeiten', 'Edit')}</a>
             </div>
             ${exList}
-            <button class="btn primary block" data-action="startWorkout" data-day="${d.id}" ${d.exercises.length ? '' : 'disabled'}>Training starten</button>
+            <button class="btn primary block" data-action="startWorkout" data-day="${d.id}" ${d.exercises.length ? '' : 'disabled'}>${L('Training starten', 'Start workout')}</button>
           </section>`;
         })
         .join('')
     : `<section class="card empty">
-        <h3>Noch kein Trainingsplan</h3>
-        <p>Leg für jeden Trainingstag die Übungen mit Sätzen, Wiederholungs-Spanne und Startgewicht an. Beim Training werden dann die Werte vom letzten Mal vorausgefüllt.</p>
-        <button class="btn ghost block" data-action="loadMyPlan">Meinen Plan laden (Chest, Back, Leg Day)</button>
+        <h3>${L('Noch kein Trainingsplan', 'No training plan yet')}</h3>
+        <p>${L('Leg für jeden Trainingstag die Übungen mit Sätzen, Wiederholungs-Spanne und Startgewicht an. Beim Training werden dann die Werte vom letzten Mal vorausgefüllt.', 'Add the exercises for each training day with sets, rep range and starting weight. During a workout, last session’s numbers are pre-filled.')}</p>
+        <button class="btn ghost block" data-action="loadMyPlan">${L('Meinen Plan laden (Chest, Back, Leg Day)', 'Load my plan (Chest, Back, Leg Day)')}</button>
       </section>`;
 
   return `${subnav('plan')}${activeBanner()}
     ${list}
     <div class="row gap">
-      <button class="btn block" data-action="addDay">+ Trainingstag</button>
-      <button class="btn ghost block" data-action="startWorkout" data-day="">Freies Training</button>
+      <button class="btn block" data-action="addDay">+ ${L('Trainingstag', 'Training day')}</button>
+      <button class="btn ghost block" data-action="startWorkout" data-day="">${L('Freies Training', 'Free workout')}</button>
     </div>
-    ${days.length && missingPlanDays().length ? `<button class="btn ghost small block mt" data-action="loadMyPlan">Fehlende Tage aus meinem Plan hinzufügen (${missingPlanDays().map((d) => esc(d.name)).join(', ')})</button>` : ''}`;
+    ${days.length && missingPlanDays().length ? `<button class="btn ghost small block mt" data-action="loadMyPlan">${L('Fehlende Tage aus meinem Plan hinzufügen', 'Add missing days from my plan')} (${missingPlanDays().map((d) => esc(d.name)).join(', ')})</button>` : ''}`;
 }
 
 export function renderDayEditor(id) {
   const d = findDay(id);
-  if (!d) return `<p>Trainingstag nicht gefunden.</p><a href="#/training">Zurück</a>`;
-  const wdButtons = WEEKDAYS_SHORT.map(
-    (w, i) => `<button class="chip ${d.weekdays.includes(i + 1) ? 'on' : ''}" data-action="toggleWeekday" data-day="${d.id}" data-wd="${i + 1}">${w}</button>`
+  if (!d) return `<p>${L('Trainingstag nicht gefunden.', 'Training day not found.')}</p><a href="#/training">${L('Zurück', 'Back')}</a>`;
+  const wdButtons = [0, 1, 2, 3, 4, 5, 6].map(
+    (i) => `<button class="chip ${d.weekdays.includes(i + 1) ? 'on' : ''}" data-action="toggleWeekday" data-day="${d.id}" data-wd="${i + 1}">${weekdayShort(i)}</button>`
   ).join('');
 
   const exCards = d.exercises
@@ -110,21 +111,21 @@ export function renderDayEditor(id) {
         <div class="card-head">
           <strong class="muted">#${i + 1}</strong>
           <div class="row">
-            <button class="icon-btn" data-action="moveEx" data-day="${d.id}" data-ex="${e.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Nach oben">↑</button>
-            <button class="icon-btn" data-action="moveEx" data-day="${d.id}" data-ex="${e.id}" data-dir="1" ${i === d.exercises.length - 1 ? 'disabled' : ''} aria-label="Nach unten">↓</button>
-            <button class="icon-btn danger" data-action="deleteEx" data-day="${d.id}" data-ex="${e.id}" aria-label="Löschen">✕</button>
+            <button class="icon-btn" data-action="moveEx" data-day="${d.id}" data-ex="${e.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="${L('Nach oben', 'Move up')}">↑</button>
+            <button class="icon-btn" data-action="moveEx" data-day="${d.id}" data-ex="${e.id}" data-dir="1" ${i === d.exercises.length - 1 ? 'disabled' : ''} aria-label="${L('Nach unten', 'Move down')}">↓</button>
+            <button class="icon-btn danger" data-action="deleteEx" data-day="${d.id}" data-ex="${e.id}" aria-label="${L('Löschen', 'Delete')}">✕</button>
           </div>
         </div>
-        ${f('name', 'Übung', 'type="text" placeholder="z. B. Kniebeugen" autocomplete="off"')}
+        ${f('name', L('Übung', 'Exercise'), `type="text" placeholder="${L('z. B. Kniebeugen', 'e.g. Squats')}" autocomplete="off"`)}
         <div class="grid4">
-          ${f('sets', 'Sätze', 'inputmode="numeric"')}
-          ${f('repMin', 'Wdh von', 'inputmode="numeric"')}
-          ${f('repMax', 'Wdh bis', 'inputmode="numeric"')}
+          ${f('sets', L('Sätze', 'Sets'), 'inputmode="numeric"')}
+          ${f('repMin', L('Wdh von', 'Reps min'), 'inputmode="numeric"')}
+          ${f('repMax', L('Wdh bis', 'Reps max'), 'inputmode="numeric"')}
           ${f('weight', 'kg', 'inputmode="decimal" placeholder="–"')}
         </div>
         <div class="grid2">
-          ${f('rest', 'Pause (Sek., 0 = Supersatz)', 'inputmode="numeric"')}
-          ${f('notes', 'Notiz', 'type="text" placeholder="z. B. Sitz Stufe 4"')}
+          ${f('rest', L('Pause (Sek., 0 = Supersatz)', 'Rest (sec, 0 = superset)'), 'inputmode="numeric"')}
+          ${f('notes', L('Notiz', 'Note'), `type="text" placeholder="${L('z. B. Sitz Stufe 4', 'e.g. seat level 4')}"`)}
         </div>
       </section>`;
     })
@@ -132,17 +133,17 @@ export function renderDayEditor(id) {
 
   return `<a class="back" href="#/training">← Plan</a>
     <section class="card">
-      <label class="field"><span>Name des Trainingstags</span>
-        <input id="day-name" type="text" value="${esc(d.name)}" data-input="dayName" data-day="${d.id}" placeholder="z. B. Leg Day">
+      <label class="field"><span>${L('Name des Trainingstags', 'Training day name')}</span>
+        <input id="day-name" type="text" value="${esc(d.name)}" data-input="dayName" data-day="${d.id}" placeholder="${L('z. B. Leg Day', 'e.g. Leg Day')}">
       </label>
-      <p class="label">Wochentage</p>
+      <p class="label">${L('Wochentage', 'Weekdays')}</p>
       <div class="chips">${wdButtons}</div>
     </section>
-    ${exCards || '<p class="muted center">Noch keine Übungen – füge die erste hinzu.</p>'}
-    <button class="btn block" data-action="addEx" data-day="${d.id}">+ Übung hinzufügen</button>
+    ${exCards || `<p class="muted center">${L('Noch keine Übungen – füge die erste hinzu.', 'No exercises yet – add the first one.')}</p>`}
+    <button class="btn block" data-action="addEx" data-day="${d.id}">+ ${L('Übung hinzufügen', 'Add exercise')}</button>
     <div class="row gap mt">
-      <button class="btn ghost danger block" data-action="deleteDay" data-day="${d.id}">Tag löschen</button>
-      <a class="btn primary block" href="#/training">Fertig</a>
+      <button class="btn ghost danger block" data-action="deleteDay" data-day="${d.id}">${L('Tag löschen', 'Delete day')}</button>
+      <a class="btn primary block" href="#/training">${L('Fertig', 'Done')}</a>
     </div>`;
 }
 
@@ -172,65 +173,65 @@ function buildSessionExercise(planEx) {
 export function renderWorkout() {
   const s = state.activeSession;
   if (!s) {
-    return `${subnav('plan')}<section class="card empty"><h3>Kein laufendes Training</h3><p>Starte ein Training über deinen Plan.</p><a class="btn primary block" href="#/training">Zum Plan</a></section>`;
+    return `${subnav('plan')}<section class="card empty"><h3>${L('Kein laufendes Training', 'No workout in progress')}</h3><p>${L('Starte ein Training über deinen Plan.', 'Start a workout from your plan.')}</p><a class="btn primary block" href="#/training">${L('Zum Plan', 'Go to plan')}</a></section>`;
   }
   const mins = Math.round((Date.now() - new Date(s.startedAt).getTime()) / 60000);
   const cards = s.exercises
     .map((ex, xi) => {
       const t = ex.target || {};
       const hint = {
-        increase: `<p class="hint up">↑ Letztes Mal alle Sätze geschafft – heute ${fmtNum(ex.hintWeight, 2)} kg</p>`,
-        repeat: '<p class="hint">Gleiches Gewicht – versuch mindestens 1 Wdh mehr als letztes Mal</p>',
-        'more-reps': '<p class="hint up">↑ Alle Sätze geschafft – heute mehr Wiederholungen oder Zusatzgewicht</p>',
+        increase: `<p class="hint up">↑ ${L(`Letztes Mal alle Sätze geschafft – heute ${fmtNum(ex.hintWeight, 2)} kg`, `Hit all sets last time – today ${fmtNum(ex.hintWeight, 2)} kg`)}</p>`,
+        repeat: `<p class="hint">${L('Gleiches Gewicht – versuch mindestens 1 Wdh mehr als letztes Mal', 'Same weight – aim for at least 1 more rep than last time')}</p>`,
+        'more-reps': `<p class="hint up">↑ ${L('Alle Sätze geschafft – heute mehr Wiederholungen oder Zusatzgewicht', 'Hit all sets – today more reps or added weight')}</p>`,
       }[ex.hint] || '';
       const rows = ex.sets
         .map(
           (set, si) => `<div class="set-row ${set.done ? 'done' : ''}">
             <span class="set-no">${si + 1}</span>
             <label class="set-field"><input id="w-${xi}-${si}" inputmode="decimal" value="${esc(fmtInput(set.weight))}" placeholder="kg" data-input="setField" data-x="${xi}" data-s="${si}" data-field="weight"><span>kg</span></label>
-            <label class="set-field"><input id="r-${xi}-${si}" inputmode="numeric" value="${esc(set.reps ?? '')}" placeholder="Wdh" data-input="setField" data-x="${xi}" data-s="${si}" data-field="reps"><span>Wdh</span></label>
-            <button class="check ${set.done ? 'on' : ''}" data-action="toggleSet" data-x="${xi}" data-s="${si}" aria-label="Satz erledigt">✓</button>
+            <label class="set-field"><input id="r-${xi}-${si}" inputmode="numeric" value="${esc(set.reps ?? '')}" placeholder="${L('Wdh', 'reps')}" data-input="setField" data-x="${xi}" data-s="${si}" data-field="reps"><span>${L('Wdh', 'reps')}</span></label>
+            <button class="check ${set.done ? 'on' : ''}" data-action="toggleSet" data-x="${xi}" data-s="${si}" aria-label="${L('Satz erledigt', 'Set done')}">✓</button>
           </div>`
         )
         .join('');
-      const meta = [t.sets && setsLabel(t), t.rest === 0 ? 'Supersatz → direkt weiter' : t.rest && `Pause ${fmtRest(t.rest)}`].filter(Boolean).join(' · ');
+      const meta = [t.sets && setsLabel(t), t.rest === 0 ? L('Supersatz → direkt weiter', 'Superset → go straight on') : t.rest && `${L('Pause', 'Rest')} ${fmtRest(t.rest)}`].filter(Boolean).join(' · ');
       return `<section class="card">
         <div class="card-head">
           <div>
             <h3><a href="#/exercise/${encodeURIComponent(ex.name)}">${esc(ex.name)}</a></h3>
             ${meta ? `<p class="muted small">${meta}</p>` : ''}
           </div>
-          <button class="icon-btn danger" data-action="removeSessionEx" data-x="${xi}" aria-label="Übung entfernen">✕</button>
+          <button class="icon-btn danger" data-action="removeSessionEx" data-x="${xi}" aria-label="${L('Übung entfernen', 'Remove exercise')}">✕</button>
         </div>
-        ${ex.last ? `<p class="small muted">Letztes Mal (${fmtDateRelative(ex.last.date)}): ${esc(ex.last.summary)}</p>` : `<p class="small muted">${ex.sets.some((x) => x.weight) ? 'Erstes Mal – Werte aus deinem Plan.' : 'Erstes Mal – Startgewicht eintragen.'}</p>`}
+        ${ex.last ? `<p class="small muted">${L('Letztes Mal', 'Last time')} (${fmtDateRelative(ex.last.date)}): ${esc(ex.last.summary)}</p>` : `<p class="small muted">${ex.sets.some((x) => x.weight) ? L('Erstes Mal – Werte aus deinem Plan.', 'First time – numbers from your plan.') : L('Erstes Mal – Startgewicht eintragen.', 'First time – enter a starting weight.')}</p>`}
         ${hint}
         ${t.notes ? `<p class="small note">${esc(t.notes)}</p>` : ''}
         <div class="sets">${rows}</div>
         <div class="row gap">
-          <button class="btn ghost small" data-action="addSet" data-x="${xi}">+ Satz</button>
-          <button class="btn ghost small" data-action="removeSet" data-x="${xi}" ${ex.sets.length ? '' : 'disabled'}>− Satz</button>
+          <button class="btn ghost small" data-action="addSet" data-x="${xi}">+ ${L('Satz', 'Set')}</button>
+          <button class="btn ghost small" data-action="removeSet" data-x="${xi}" ${ex.sets.length ? '' : 'disabled'}>− ${L('Satz', 'Set')}</button>
         </div>
       </section>`;
     })
     .join('');
 
   return `<div class="workout-head">
-      <div><h2>${esc(s.dayName)}</h2><p class="muted small">${fmtDate(s.date)} · seit ${mins} Min.</p></div>
+      <div><h2>${esc(s.dayName)}</h2><p class="muted small">${fmtDate(s.date)} · ${L(`seit ${mins} Min.`, `${mins} min`)}</p></div>
     </div>
     ${cards}
     <form class="card row gap" data-form="addSessionEx">
-      <input id="add-ex-name" name="name" type="text" placeholder="Übung hinzufügen" autocomplete="off" list="exercise-names">
+      <input id="add-ex-name" name="name" type="text" placeholder="${L('Übung hinzufügen', 'Add exercise')}" autocomplete="off" list="exercise-names">
       <button class="btn">+</button>
     </form>
     <datalist id="exercise-names">${allExerciseNames().map((n) => `<option value="${esc(n)}">`).join('')}</datalist>
     <section class="card">
-      <label class="field"><span>Notizen zum Training</span>
-        <textarea id="session-notes" rows="2" data-input="sessionNotes" placeholder="Wie lief’s? Schlaf, Energie, Schmerzen …">${esc(s.notes || '')}</textarea>
+      <label class="field"><span>${L('Notizen zum Training', 'Workout notes')}</span>
+        <textarea id="session-notes" rows="2" data-input="sessionNotes" placeholder="${L('Wie lief’s? Schlaf, Energie, Schmerzen …', 'How did it go? Sleep, energy, pain …')}">${esc(s.notes || '')}</textarea>
       </label>
     </section>
     <div class="row gap">
-      <button class="btn ghost danger block" data-action="discardWorkout">Verwerfen</button>
-      <button class="btn primary block" data-action="finishWorkout">Training beenden</button>
+      <button class="btn ghost danger block" data-action="discardWorkout">${L('Verwerfen', 'Discard')}</button>
+      <button class="btn primary block" data-action="finishWorkout">${L('Training beenden', 'Finish workout')}</button>
     </div>`;
 }
 
@@ -238,7 +239,7 @@ function allExerciseNames() {
   const names = new Map();
   for (const d of state.plan.days) for (const e of d.exercises) if (e.name) names.set(normName(e.name), e.name);
   for (const s of state.sessions) for (const e of s.exercises) if (e.name) names.set(normName(e.name), e.name);
-  return [...names.values()].sort((a, b) => a.localeCompare(b, 'de'));
+  return [...names.values()].sort((a, b) => a.localeCompare(b, locale()));
 }
 
 // --- Verlauf ---
@@ -252,15 +253,15 @@ export function renderHistory() {
           const dur = s.finishedAt ? Math.round((new Date(s.finishedAt) - new Date(s.startedAt)) / 60000) : null;
           return `<a class="list-item" href="#/session/${s.id}">
             <div><strong>${esc(s.dayName)}</strong><span class="muted small">${fmtDate(s.date, { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' })}</span></div>
-            <div class="right small muted">${sets} Sätze${dur ? ` · ${dur} Min.` : ''}<br>${fmtNum(sessionVolume(s) / 1000, 1)} t Volumen</div>
+            <div class="right small muted">${sets} ${L('Sätze', 'sets')}${dur ? ` · ${dur} min` : ''}<br>${fmtNum(sessionVolume(s) / 1000, 1)} t ${L('Volumen', 'volume')}</div>
           </a>`;
         })
         .join('')
-    : '<p class="muted center">Noch keine Trainings abgeschlossen.</p>';
+    : `<p class="muted center">${L('Noch keine Trainings abgeschlossen.', 'No workouts completed yet.')}</p>`;
 
   const names = allExerciseNames().filter((n) => state.sessions.some((s) => s.exercises.some((e) => normName(e.name) === normName(n))));
   const exList = names.length
-    ? `<section class="card"><h3>Übungen</h3><div class="chips">${names
+    ? `<section class="card"><h3>${L('Übungen', 'Exercises')}</h3><div class="chips">${names
         .map((n) => `<a class="chip" href="#/exercise/${encodeURIComponent(n)}">${esc(n)}</a>`)
         .join('')}</div></section>`
     : '';
@@ -270,8 +271,8 @@ export function renderHistory() {
 
   return `${subnav('history')}${activeBanner()}
     <div class="stats">
-      <div class="stat"><span class="stat-value">${state.sessions.length}</span><span class="stat-label">Trainings gesamt</span></div>
-      <div class="stat"><span class="stat-value">${thisWeek}</span><span class="stat-label">letzte 7 Tage</span></div>
+      <div class="stat"><span class="stat-value">${state.sessions.length}</span><span class="stat-label">${L('Trainings gesamt', 'Total workouts')}</span></div>
+      <div class="stat"><span class="stat-value">${thisWeek}</span><span class="stat-label">${L('letzte 7 Tage', 'last 7 days')}</span></div>
     </div>
     ${exList}
     <div class="list">${list}</div>`;
@@ -279,7 +280,7 @@ export function renderHistory() {
 
 export function renderSession(id) {
   const s = state.sessions.find((x) => x.id === id);
-  if (!s) return `<a class="back" href="#/history">← Verlauf</a><p>Training nicht gefunden.</p>`;
+  if (!s) return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a><p>${L('Training nicht gefunden.', 'Workout not found.')}</p>`;
   const rows = s.exercises
     .filter((e) => e.sets.some((x) => x.done))
     .map((e) => {
@@ -287,18 +288,18 @@ export function renderSession(id) {
       return `<section class="card">
         <h3><a href="#/exercise/${encodeURIComponent(e.name)}">${esc(e.name)}</a></h3>
         <table class="table"><tbody>
-          ${e.sets.filter((x) => x.done).map((x, i) => `<tr><td class="muted">${i + 1}</td><td>${x.weight ? `${fmtNum(x.weight, 2)} kg` : 'Körpergewicht'}</td><td>${x.reps ?? '?'} Wdh</td></tr>`).join('')}
+          ${e.sets.filter((x) => x.done).map((x, i) => `<tr><td class="muted">${i + 1}</td><td>${x.weight ? `${fmtNum(x.weight, 2)} kg` : L('Körpergewicht', 'Bodyweight')}</td><td>${x.reps ?? '?'} ${L('Wdh', 'reps')}</td></tr>`).join('')}
         </tbody></table>
-        ${best ? `<p class="small muted">Geschätztes 1RM: ${fmtNum(best, 1)} kg</p>` : ''}
+        ${best ? `<p class="small muted">${L('Geschätztes 1RM', 'Estimated 1RM')}: ${fmtNum(best, 1)} kg</p>` : ''}
       </section>`;
     })
     .join('');
-  return `<a class="back" href="#/history">← Verlauf</a>
+  return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a>
     <h2>${esc(s.dayName)}</h2>
-    <p class="muted">${fmtDate(s.date, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })} · ${fmtNum(sessionVolume(s), 0)} kg Volumen</p>
+    <p class="muted">${fmtDate(s.date, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })} · ${fmtNum(sessionVolume(s), 0)} kg ${L('Volumen', 'volume')}</p>
     ${s.notes ? `<section class="card"><p>${esc(s.notes)}</p></section>` : ''}
     ${rows}
-    <button class="btn ghost danger block" data-action="deleteSession" data-id="${s.id}">Training löschen</button>`;
+    <button class="btn ghost danger block" data-action="deleteSession" data-id="${s.id}">${L('Training löschen', 'Delete workout')}</button>`;
 }
 
 export function renderExercise(name) {
@@ -309,7 +310,7 @@ export function renderExercise(name) {
     .sort((a, b) => a.s.date.localeCompare(b.s.date));
 
   if (!entries.length) {
-    return `<a class="back" href="#/history">← Verlauf</a><h2>${esc(name)}</h2><p class="muted">Noch keine Daten zu dieser Übung.</p>`;
+    return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a><h2>${esc(name)}</h2><p class="muted">${L('Noch keine Daten zu dieser Übung.', 'No data for this exercise yet.')}</p>`;
   }
 
   const points = entries.map(({ s, e }) => {
@@ -326,7 +327,7 @@ export function renderExercise(name) {
   const bodyweight = points.every((p) => p.top === 0);
   const best = Math.max(...points.map((p) => (bodyweight ? p.reps : p.e1rm)));
   const chart = bodyweight
-    ? lineChart([{ points: points.map((p) => ({ date: p.date, y: p.reps })), cls: 'line-main', dots: true }], { unit: 'Wdh', digits: 0 })
+    ? lineChart([{ points: points.map((p) => ({ date: p.date, y: p.reps })), cls: 'line-main', dots: true }], { unit: L('Wdh', 'reps'), digits: 0 })
     : lineChart(
         [
           { points: points.map((p) => ({ date: p.date, y: p.e1rm })), cls: 'line-main', dots: true },
@@ -335,15 +336,15 @@ export function renderExercise(name) {
         { unit: 'kg' }
       );
 
-  return `<a class="back" href="#/history">← Verlauf</a>
+  return `<a class="back" href="#/history">← ${L('Verlauf', 'History')}</a>
     <h2>${esc(entries[entries.length - 1].e.name)}</h2>
     <section class="card">
       ${chart}
-      ${bodyweight ? '<p class="legend"><span class="key main"></span>Max. Wiederholungen</p>' : '<p class="legend"><span class="key main"></span>Geschätztes 1RM <span class="key soft"></span>Schwerstes Gewicht</p>'}
+      ${bodyweight ? `<p class="legend"><span class="key main"></span>${L('Max. Wiederholungen', 'Max reps')}</p>` : `<p class="legend"><span class="key main"></span>${L('Geschätztes 1RM', 'Estimated 1RM')} <span class="key soft"></span>${L('Schwerstes Gewicht', 'Heaviest weight')}</p>`}
     </section>
     <div class="stats">
-      <div class="stat"><span class="stat-value">${fmtNum(best, 1)}</span><span class="stat-label">${bodyweight ? 'Bestwert Wdh' : 'Bestes 1RM (kg)'}</span></div>
-      <div class="stat"><span class="stat-value">${entries.length}</span><span class="stat-label">Einheiten</span></div>
+      <div class="stat"><span class="stat-value">${fmtNum(best, 1)}</span><span class="stat-label">${bodyweight ? L('Bestwert Wdh', 'Best reps') : L('Bestes 1RM (kg)', 'Best 1RM (kg)')}</span></div>
+      <div class="stat"><span class="stat-value">${entries.length}</span><span class="stat-label">${L('Einheiten', 'Sessions')}</span></div>
     </div>
     <div class="list">
       ${[...points]
@@ -371,11 +372,11 @@ export const actions = {
   loadMyPlan() {
     const missing = missingPlanDays();
     state.plan.days.push(...missing);
-    toast(`${missing.length} Trainingstage hinzugefügt – jetzt noch Wochentage eintragen`);
+    toast(L(`${missing.length} Trainingstage hinzugefügt`, `${missing.length} training days added`));
   },
   deleteDay(el) {
     const d = dayOf(el);
-    if (!d || !confirm(`„${d.name}“ wirklich löschen? Bereits geloggte Trainings bleiben erhalten.`)) return false;
+    if (!d || !confirm(L(`„${d.name}“ wirklich löschen? Bereits geloggte Trainings bleiben erhalten.`, `Really delete “${d.name}”? Logged workouts are kept.`))) return false;
     state.plan.days = state.plan.days.filter((x) => x.id !== d.id);
     navigate('#/training');
   },
@@ -396,7 +397,7 @@ export const actions = {
   deleteEx(el) {
     const d = dayOf(el);
     const ex = d.exercises.find((e) => e.id === el.dataset.ex);
-    if (ex?.name && !confirm(`„${ex.name}“ aus dem Plan entfernen?`)) return false;
+    if (ex?.name && !confirm(L(`„${ex.name}“ aus dem Plan entfernen?`, `Remove “${ex.name}” from the plan?`))) return false;
     d.exercises = d.exercises.filter((e) => e.id !== el.dataset.ex);
   },
   moveEx(el) {
@@ -415,7 +416,7 @@ export const actions = {
   },
 
   startWorkout(el) {
-    if (state.activeSession && !confirm('Es läuft schon ein Training. Verwerfen und neu starten?')) {
+    if (state.activeSession && !confirm(L('Es läuft schon ein Training. Verwerfen und neu starten?', 'A workout is already in progress. Discard it and start a new one?'))) {
       navigate('#/workout');
       return false;
     }
@@ -425,7 +426,7 @@ export const actions = {
       date: today(),
       startedAt: new Date().toISOString(),
       dayId: day?.id ?? null,
-      dayName: day?.name ?? 'Freies Training',
+      dayName: day?.name ?? L('Freies Training', 'Free workout'),
       exercises: day ? day.exercises.filter((e) => e.name).map(buildSessionExercise) : [],
       notes: '',
     };
@@ -443,7 +444,7 @@ export const actions = {
       if (set.reps === null || set.reps === undefined) set.reps = ex.target?.repMin ?? null;
       const isLast = ex.sets.every((s) => s.done);
       // Pause 0 = Supersatz: kein Timer
-      startRestTimer(ex.target?.rest ?? 90, isLast ? `${ex.name} fertig` : `${ex.name} · Satz ${Number(el.dataset.s) + 2}`);
+      startRestTimer(ex.target?.rest ?? 90, isLast ? `${ex.name} ${L('fertig', 'done')}` : `${ex.name} · ${L('Satz', 'Set')} ${Number(el.dataset.s) + 2}`);
     }
   },
   addSet(el) {
@@ -456,7 +457,7 @@ export const actions = {
   },
   removeSessionEx(el) {
     const ex = state.activeSession.exercises[el.dataset.x];
-    if (ex.sets.some((s) => s.done) && !confirm(`„${ex.name}“ samt erledigter Sätze entfernen?`)) return false;
+    if (ex.sets.some((s) => s.done) && !confirm(L(`„${ex.name}“ samt erledigter Sätze entfernen?`, `Remove “${ex.name}” including completed sets?`))) return false;
     state.activeSession.exercises.splice(Number(el.dataset.x), 1);
   },
   addSessionEx(form) {
@@ -470,7 +471,7 @@ export const actions = {
     if (state.activeSession) state.activeSession.notes = el.value;
   },
   discardWorkout() {
-    if (!confirm('Training verwerfen? Die Sätze werden nicht gespeichert.')) return false;
+    if (!confirm(L('Training verwerfen? Die Sätze werden nicht gespeichert.', 'Discard workout? The sets will not be saved.'))) return false;
     state.activeSession = null;
     navigate('#/training');
   },
@@ -479,10 +480,10 @@ export const actions = {
     const doneSets = s.exercises.reduce((n, e) => n + e.sets.filter((x) => x.done).length, 0);
     const openSets = s.exercises.reduce((n, e) => n + e.sets.filter((x) => !x.done).length, 0);
     if (!doneSets) {
-      alert('Noch kein Satz abgehakt. Hake erledigte Sätze mit ✓ ab oder verwirf das Training.');
+      alert(L('Noch kein Satz abgehakt. Hake erledigte Sätze mit ✓ ab oder verwirf das Training.', 'No set checked off yet. Tick completed sets with ✓ or discard the workout.'));
       return false;
     }
-    if (openSets && !confirm(`${openSets} Sätze sind nicht abgehakt und werden nicht gespeichert. Trotzdem beenden?`)) return false;
+    if (openSets && !confirm(L(`${openSets} Sätze sind nicht abgehakt und werden nicht gespeichert. Trotzdem beenden?`, `${openSets} sets are not checked off and won't be saved. Finish anyway?`))) return false;
     const finished = {
       id: s.id,
       date: s.date,
@@ -497,11 +498,11 @@ export const actions = {
     };
     state.sessions.push(finished);
     state.activeSession = null;
-    toast(`Stark! ${doneSets} Sätze gespeichert 💪`);
+    toast(L(`Stark! ${doneSets} Sätze gespeichert 💪`, `Nice! ${doneSets} sets saved 💪`));
     navigate(`#/session/${finished.id}`);
   },
   deleteSession(el) {
-    if (!confirm('Dieses Training endgültig löschen?')) return false;
+    if (!confirm(L('Dieses Training endgültig löschen?', 'Permanently delete this workout?'))) return false;
     state.sessions = state.sessions.filter((s) => s.id !== el.dataset.id);
     navigate('#/history');
   },

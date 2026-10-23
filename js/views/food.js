@@ -3,12 +3,13 @@ import { computeTargets } from '../calc.js';
 import { esc, uid, today, addDays, parseNum, fmtNum, fmtDate, fmtDateRelative, round, normName } from '../util.js';
 import { bar } from '../chart.js';
 import { navigate, toast } from '../app.js';
+import { L } from '../i18n.js';
 
-const MEALS = [
-  ['breakfast', 'Frühstück'],
-  ['lunch', 'Mittagessen'],
-  ['dinner', 'Abendessen'],
-  ['snack', 'Snacks'],
+const meals = () => [
+  ['breakfast', L('Frühstück', 'Breakfast')],
+  ['lunch', L('Mittagessen', 'Lunch')],
+  ['dinner', L('Abendessen', 'Dinner')],
+  ['snack', L('Snacks', 'Snacks')],
 ];
 
 function defaultMeal() {
@@ -43,16 +44,16 @@ export function render(dateParam) {
   const remaining = target ? target.kcal - t.kcal : null;
   const summary = `<section class="card">
     <div class="kcal-big">
-      <div><span class="big">${fmtNum(t.kcal, 0)}</span><span class="muted"> kcal gegessen</span></div>
-      ${target ? `<div class="right"><span class="big ${remaining < 0 ? 'neg' : ''}">${fmtNum(Math.abs(remaining), 0)}</span><span class="muted"> ${remaining < 0 ? 'drüber' : 'übrig'}</span></div>` : ''}
+      <div><span class="big">${fmtNum(t.kcal, 0)}</span><span class="muted"> ${L('kcal gegessen', 'kcal eaten')}</span></div>
+      ${target ? `<div class="right"><span class="big ${remaining < 0 ? 'neg' : ''}">${fmtNum(Math.abs(remaining), 0)}</span><span class="muted"> ${remaining < 0 ? L('drüber', 'over') : L('übrig', 'left')}</span></div>` : ''}
     </div>
-    ${target ? bar(t.kcal, target.kcal, 'kcal') : '<p class="small muted">Trag unter <a href="#/goals">Ziele</a> dein Profil ein, dann siehst du hier dein Tagesziel.</p>'}
+    ${target ? bar(t.kcal, target.kcal, 'kcal') : `<p class="small muted">${L('Trag unter <a href="#/goals">Ziele</a> dein Profil ein, dann siehst du hier dein Tagesziel.', 'Fill in your profile under <a href="#/goals">Goals</a> to see your daily target here.')}</p>`}
     ${macro('Protein', t.protein, target?.protein, 'g', 'p')}
-    ${macro('Kohlenhydrate', t.carbs, target?.carbs, 'g', 'c')}
-    ${macro('Fett', t.fat, target?.fat, 'g', 'f')}
+    ${macro(L('Kohlenhydrate', 'Carbs'), t.carbs, target?.carbs, 'g', 'c')}
+    ${macro(L('Fett', 'Fat'), t.fat, target?.fat, 'g', 'f')}
   </section>`;
 
-  const groups = MEALS.map(([key, label]) => {
+  const groups = meals().map(([key, label]) => {
     const items = entries.filter((e) => e.meal === key);
     if (!items.length) return '';
     const kcal = items.reduce((s, e) => s + (e.kcal || 0), 0);
@@ -61,8 +62,8 @@ export function render(dateParam) {
       ${items
         .map(
           (e) => `<div class="food-item">
-            <div><strong>${esc(e.name)}</strong><span class="small muted">${e.amount ? `${fmtNum(e.amount, 0)} g · ` : ''}P ${fmtNum(e.protein, 0)} · K ${fmtNum(e.carbs, 0)} · F ${fmtNum(e.fat, 0)}</span></div>
-            <div class="row"><span>${fmtNum(e.kcal, 0)}</span><button class="icon-btn danger" data-action="deleteFood" data-id="${e.id}" aria-label="Löschen">✕</button></div>
+            <div><strong>${esc(e.name)}</strong><span class="small muted">${e.amount ? `${fmtNum(e.amount, 0)} g · ` : ''}P ${fmtNum(e.protein, 0)} · ${L('K', 'C')} ${fmtNum(e.carbs, 0)} · F ${fmtNum(e.fat, 0)}</span></div>
+            <div class="row"><span>${fmtNum(e.kcal, 0)}</span><button class="icon-btn danger" data-action="deleteFood" data-id="${e.id}" aria-label="${L('Löschen', 'Delete')}">✕</button></div>
           </div>`
         )
         .join('')}
@@ -73,44 +74,44 @@ export function render(dateParam) {
   const meal = defaultMeal();
 
   const form = `<form class="card" data-form="addFood" id="food-form">
-    <h3>Eintrag hinzufügen</h3>
-    ${lib.length ? `<p class="label">Gespeicherte Lebensmittel (antippen, dann Menge eintragen)</p>
+    <h3>${L('Eintrag hinzufügen', 'Add entry')}</h3>
+    ${lib.length ? `<p class="label">${L('Gespeicherte Lebensmittel (antippen, dann Menge eintragen)', 'Saved foods (tap, then enter amount)')}</p>
       <div class="chips scroll">${lib.map((f) => `<button type="button" class="chip" data-action="pickFood" data-id="${f.id}">${esc(f.name)}</button>`).join('')}</div>` : ''}
-    <label class="field"><span>Was?</span><input id="food-name" name="name" type="text" required autocomplete="off" placeholder="z. B. Skyr, Hähnchen mit Reis"></label>
+    <label class="field"><span>${L('Was?', 'What?')}</span><input id="food-name" name="name" type="text" required autocomplete="off" placeholder="${L('z. B. Skyr, Hähnchen mit Reis', 'e.g. skyr, chicken with rice')}"></label>
     <div class="grid2">
-      <label class="field"><span>Mahlzeit</span><select id="food-meal" name="meal">${MEALS.map(([k, l]) => `<option value="${k}" ${k === meal ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
-      <label class="field"><span>Menge (g)</span><input id="food-amount" name="amount" inputmode="decimal" placeholder="optional"></label>
+      <label class="field"><span>${L('Mahlzeit', 'Meal')}</span><select id="food-meal" name="meal">${meals().map(([k, l]) => `<option value="${k}" ${k === meal ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      <label class="field"><span>${L('Menge (g)', 'Amount (g)')}</span><input id="food-amount" name="amount" inputmode="decimal" placeholder="optional"></label>
     </div>
-    <label class="field"><span>Nährwerte gelten für</span>
+    <label class="field"><span>${L('Nährwerte gelten für', 'Nutrition values are for')}</span>
       <select id="food-basis" name="basis">
-        <option value="portion">die eingetragene Portion</option>
-        <option value="100">100 g (wird auf die Menge umgerechnet)</option>
+        <option value="portion">${L('die eingetragene Portion', 'the portion entered')}</option>
+        <option value="100">${L('100 g (wird auf die Menge umgerechnet)', '100 g (scaled to the amount)')}</option>
       </select>
     </label>
     <div class="grid4">
       <label class="field"><span>kcal</span><input id="food-kcal" name="kcal" inputmode="decimal" required></label>
       <label class="field"><span>Protein</span><input id="food-protein" name="protein" inputmode="decimal" placeholder="g"></label>
-      <label class="field"><span>KH</span><input id="food-carbs" name="carbs" inputmode="decimal" placeholder="g"></label>
-      <label class="field"><span>Fett</span><input id="food-fat" name="fat" inputmode="decimal" placeholder="g"></label>
+      <label class="field"><span>${L('KH', 'Carbs')}</span><input id="food-carbs" name="carbs" inputmode="decimal" placeholder="g"></label>
+      <label class="field"><span>${L('Fett', 'Fat')}</span><input id="food-fat" name="fat" inputmode="decimal" placeholder="g"></label>
     </div>
-    <label class="check-label"><input type="checkbox" name="saveLib" id="food-save"> Als Lebensmittel speichern (für schnelles Eintragen)</label>
-    <button class="btn primary block">Hinzufügen</button>
+    <label class="check-label"><input type="checkbox" name="saveLib" id="food-save"> ${L('Als Lebensmittel speichern (für schnelles Eintragen)', 'Save as food (for quick entry)')}</label>
+    <button class="btn primary block">${L('Hinzufügen', 'Add')}</button>
   </form>`;
 
   return `<div class="date-nav">
-      <button class="icon-btn" data-action="foodDate" data-date="${addDays(date, -1)}" aria-label="Vorheriger Tag">‹</button>
-      <strong>${fmtDateRelative(date)}${date !== today() ? '' : ''}</strong><span class="muted small">${fmtDate(date, { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
-      <button class="icon-btn" data-action="foodDate" data-date="${addDays(date, 1)}" ${date >= today() ? 'disabled' : ''} aria-label="Nächster Tag">›</button>
+      <button class="icon-btn" data-action="foodDate" data-date="${addDays(date, -1)}" aria-label="${L('Vorheriger Tag', 'Previous day')}">‹</button>
+      <strong>${fmtDateRelative(date)}</strong><span class="muted small">${fmtDate(date, { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+      <button class="icon-btn" data-action="foodDate" data-date="${addDays(date, 1)}" ${date >= today() ? 'disabled' : ''} aria-label="${L('Nächster Tag', 'Next day')}">›</button>
     </div>
     ${summary}
-    ${groups || '<p class="muted center">Noch nichts eingetragen.</p>'}
+    ${groups || `<p class="muted center">${L('Noch nichts eingetragen.', 'Nothing logged yet.')}</p>`}
     ${form}
     <div class="row gap">
-      <button class="btn ghost block" data-action="copyYesterday" data-date="${date}">Vortag kopieren</button>
+      <button class="btn ghost block" data-action="copyYesterday" data-date="${date}">${L('Vortag kopieren', 'Copy previous day')}</button>
     </div>
     <label class="check-label card">
       <input type="checkbox" id="incomplete" data-change="toggleIncomplete" data-date="${date}" ${incomplete ? 'checked' : ''}>
-      <span>Tag unvollständig geloggt – nicht für die automatische Kalorienanpassung verwenden</span>
+      <span>${L('Tag unvollständig geloggt – nicht für die automatische Kalorienanpassung verwenden', 'Day not fully logged – exclude from automatic calorie adjustment')}</span>
     </label>`;
 }
 
@@ -152,7 +153,7 @@ export const actions = {
     };
     if (!name) return false;
     if (per100 && !amount) {
-      alert('Bei Nährwerten pro 100 g bitte die Menge in Gramm eintragen.');
+      alert(L('Bei Nährwerten pro 100 g bitte die Menge in Gramm eintragen.', 'For values per 100 g, please enter the amount in grams.'));
       return false;
     }
     const factor = per100 ? amount / 100 : 1;
@@ -186,7 +187,7 @@ export const actions = {
       item.lastAmount = amount ?? 100;
       if (!existing) state.foodLibrary.push(item);
     }
-    toast(`${name} eingetragen`);
+    toast(L(`${name} eingetragen`, `${name} added`));
   },
   deleteFood(el) {
     state.foods = state.foods.filter((f) => f.id !== el.dataset.id);
@@ -195,10 +196,10 @@ export const actions = {
     const date = el.dataset.date;
     const prev = foodsOn(addDays(date, -1));
     if (!prev.length) {
-      toast('Am Vortag ist nichts eingetragen');
+      toast(L('Am Vortag ist nichts eingetragen', 'Nothing logged on the previous day'));
       return false;
     }
-    if (!confirm(`${prev.length} Einträge vom Vortag übernehmen?`)) return false;
+    if (!confirm(L(`${prev.length} Einträge vom Vortag übernehmen?`, `Copy ${prev.length} entries from the previous day?`))) return false;
     state.foods.push(...prev.map((f) => ({ ...f, id: uid(), date })));
   },
   toggleIncomplete(el) {

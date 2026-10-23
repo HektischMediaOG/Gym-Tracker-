@@ -323,3 +323,8 @@ summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.9
 .news-item h3 a { text-decoration: none; }
 .abstract { line-height: 1.5; }
 .link { color: var(--accent); font-weight: 700; display: inline-block; margin-top: 6px; }
+.topbar .row { gap: 12px; }
+.lang-toggle {
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+  border-radius: 8px; padding: 4px 9px; font: inherit; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.04em; cursor: pointer;
+}

@@ -1,4 +1,5 @@
 // Kleine Helfer ohne Abhängigkeiten zum DOM oder State.
+import { L, locale, getLang } from './i18n.js';
 
 export function esc(value) {
   return String(value ?? '')
@@ -25,7 +26,7 @@ export function parseNum(value) {
 // Zahl für ein Eingabefeld: deutsches Dezimalkomma, leer bei null
 export function fmtInput(n) {
   if (n === null || n === undefined || n === '') return '';
-  return String(n).replace('.', ',');
+  return getLang() === 'de' ? String(n).replace('.', ',') : String(n);
 }
 
 export function round(n, digits = 0) {
@@ -35,7 +36,7 @@ export function round(n, digits = 0) {
 
 export function fmtNum(n, digits = 1) {
   if (n === null || n === undefined || !Number.isFinite(n)) return '–';
-  return n.toLocaleString('de-DE', { maximumFractionDigits: digits, minimumFractionDigits: 0 });
+  return n.toLocaleString(locale(), { maximumFractionDigits: digits, minimumFractionDigits: 0 });
 }
 
 export function fmtSigned(n, digits = 1) {
@@ -82,19 +83,30 @@ export function isoWeekday(iso) {
   return d === 0 ? 7 : d;
 }
 
-export const WEEKDAYS_SHORT = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-export const WEEKDAYS_LONG = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
+const WD_SHORT = { de: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'], en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] };
+const WD_LONG = {
+  de: ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'],
+  en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+};
+
+// Als Funktionen, damit ein Sprachwechsel sofort greift
+export function weekdayShort(i) {
+  return WD_SHORT[getLang()][i];
+}
+export function weekdayLong(i) {
+  return WD_LONG[getLang()][i];
+}
 
 export function fmtDate(iso, opts = { weekday: 'short', day: '2-digit', month: '2-digit' }) {
   if (!iso) return '';
-  return parseDate(iso).toLocaleDateString('de-DE', opts);
+  return parseDate(iso).toLocaleDateString(locale(), opts);
 }
 
 export function fmtDateRelative(iso) {
   const diff = daysBetween(iso, today());
-  if (diff === 0) return 'Heute';
-  if (diff === 1) return 'Gestern';
-  if (diff === -1) return 'Morgen';
+  if (diff === 0) return L('Heute', 'Today');
+  if (diff === 1) return L('Gestern', 'Yesterday');
+  if (diff === -1) return L('Morgen', 'Tomorrow');
   return fmtDate(iso);
 }
 

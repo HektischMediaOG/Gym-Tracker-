@@ -6,6 +6,7 @@ import * as weight from './views/weight.js';
 import * as goals from './views/goals.js';
 import * as settings from './views/settings.js';
 import * as news from './views/news.js';
+import { L, setLang } from './i18n.js';
 
 const views = { home, training, food, weight, goals, settings, news };
 
@@ -28,12 +29,12 @@ const routes = {
 const actions = {};
 for (const v of Object.values(views)) Object.assign(actions, v.actions || {});
 
-const TABS = [
-  ['home', '#/', 'Heute', 'M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],
+const TABS = () => [
+  ['home', '#/', L('Heute', 'Today'), 'M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],
   ['training', '#/training', 'Training', 'M2 10h2v4H2zM20 10h2v4h-2zM5 7h3v10H5zM16 7h3v10h-3zM8 11h8v2H8z'],
-  ['food', '#/food', 'Essen', 'M7 2v9a3 3 0 0 0 2 2.8V22h2v-8.2A3 3 0 0 0 13 11V2h-2v6h-1V2H9v6H8V2zM17 2c-1.7 0-3 2.2-3 5v6h2v9h2V2z'],
-  ['weight', '#/weight', 'Gewicht', 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm7 3a5 5 0 0 0-4.9 4h2.1a3 3 0 0 1 2.3-1.9l1.2 2.4 1.8-.9-1-2.1A3 3 0 0 1 14.8 11h2.1A5 5 0 0 0 12 7z'],
-  ['goals', '#/goals', 'Ziele', 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 4a6 6 0 1 1-6 6 6 6 0 0 1 6-6zm0 3a3 3 0 1 0 3 3 3 3 0 0 0-3-3z'],
+  ['food', '#/food', L('Essen', 'Food'), 'M7 2v9a3 3 0 0 0 2 2.8V22h2v-8.2A3 3 0 0 0 13 11V2h-2v6h-1V2H9v6H8V2zM17 2c-1.7 0-3 2.2-3 5v6h2v9h2V2z'],
+  ['weight', '#/weight', L('Gewicht', 'Weight'), 'M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm7 3a5 5 0 0 0-4.9 4h2.1a3 3 0 0 1 2.3-1.9l1.2 2.4 1.8-.9-1-2.1A3 3 0 0 1 14.8 11h2.1A5 5 0 0 0 12 7z'],
+  ['goals', '#/goals', L('Ziele', 'Goals'), 'M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 4a6 6 0 1 1-6 6 6 6 0 0 1 6-6zm0 3a3 3 0 1 0 3 3 3 3 0 0 0-3-3z'],
 ];
 
 function parseRoute() {
@@ -90,7 +91,9 @@ function renderNow() {
 }
 
 function renderShell() {
-  document.getElementById('tabbar').innerHTML = TABS.map(
+  document.getElementById('settings-link').setAttribute('aria-label', L('Einstellungen', 'Settings'));
+  document.getElementById('lang-toggle').textContent = L('DE', 'EN'); // zeigt die aktive Sprache
+  document.getElementById('tabbar').innerHTML = TABS().map(
     ([tab, href, label, icon]) => `<a href="${href}" data-tab="${tab}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${icon}"/></svg><span>${label}</span></a>`
   ).join('');
 }
@@ -166,7 +169,7 @@ function renderTimer() {
   el.classList.toggle('done', left === 0);
   const mm = Math.floor(left / 60);
   const ss = String(left % 60).padStart(2, '0');
-  el.querySelector('.time').textContent = left === 0 ? 'Weiter geht’s!' : `${mm}:${ss}`;
+  el.querySelector('.time').textContent = left === 0 ? L('Weiter geht’s!', 'Go!') : `${mm}:${ss}`;
   el.querySelector('.timer-label').textContent = timer.label;
   el.querySelector('.progress span').style.width = `${(1 - left / timer.total) * 100}%`;
   if (left === 0 && !timer.notified) {
@@ -197,12 +200,26 @@ export function toast(msg) {
   toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
 }
 
+// --- Sprache ---
+
+export function applyLang() {
+  setLang(state.settings.lang);
+  renderShell();
+  render();
+}
+
+actions.toggleLang = () => {
+  state.settings.lang = state.settings.lang === 'de' ? 'en' : 'de';
+  applyLang();
+};
+
 // --- Start ---
 
 window.addEventListener('hashchange', render);
 window.addEventListener('pagehide', saveNow);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveNow(); });
 
+setLang(state.settings.lang);
 renderShell();
 render();
 news.loadNews();

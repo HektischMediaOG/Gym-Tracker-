@@ -1,6 +1,7 @@
 // App-State + Persistenz in localStorage. Alles bleibt lokal auf dem Gerät.
 import { today, uid, normName } from './util.js';
 import { GOALS } from './calc.js';
+import { L } from './i18n.js';
 
 const KEY = 'gymtracker.v1';
 const SCHEMA_VERSION = 1;
@@ -18,7 +19,7 @@ export function defaultState() {
       startDate: today(),
       adjustments: [], // {date, from, to, observed, note}
     },
-    settings: { increment: 2.5, adaptiveWindow: 21 },
+    settings: { increment: 2.5, adaptiveWindow: 21, lang: 'en' },
     plan: { days: myPlanDays() },
     sessions: [],
     activeSession: null,
@@ -102,7 +103,7 @@ export function saveNow() {
     localStorage.setItem(KEY, JSON.stringify(state));
   } catch (e) {
     console.error('Speichern fehlgeschlagen', e);
-    alert('Speichern fehlgeschlagen – ist der Speicher voll? Bitte ein Backup exportieren.');
+    alert(L('Speichern fehlgeschlagen – ist der Speicher voll? Bitte ein Backup exportieren.', 'Saving failed – is storage full? Please export a backup.'));
   }
 }
 
@@ -176,7 +177,7 @@ export function newExercise(partial = {}) {
 }
 
 export function newDay(partial = {}) {
-  return { id: uid(), name: 'Neuer Trainingstag', weekdays: [], exercises: [], ...partial };
+  return { id: uid(), name: L('Neuer Trainingstag', 'New training day'), weekdays: [], exercises: [], ...partial };
 }
 
 // Wdh-Spanne für die doppelte Progression: die notierte Wdh-Zahl ist das obere Ende,
