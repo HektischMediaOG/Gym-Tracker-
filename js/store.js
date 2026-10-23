@@ -213,7 +213,7 @@ export function myPlanDays() {
         ex('Kniebeugen', 2, 8, 75),
         ex('Beinstrecker', 2, 10, 100),
         ex('Wadenheben', 2, 8, 95),
-        ex('Upright Rows', 2, null, 55),
+        ex('Upright Rows', 2, 10, 55),
       ],
     }),
   ];
