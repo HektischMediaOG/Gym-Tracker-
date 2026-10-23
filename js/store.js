@@ -27,7 +27,7 @@ export function defaultState() {
     foodLibrary: [], // {id, name, kcal, protein, carbs, fat} je 100 g
     incompleteDays: [], // Tage, die nicht in die Anpassung einfließen sollen
     news: { seen: [] }, // IDs bereits angezeigter Studien
-    migrations: { planWeekdays: true },
+    migrations: { planWeekdays: true, planWeekdaysFix: true },
   };
 }
 
@@ -55,6 +55,20 @@ function migrate(s) {
       if (!d.weekdays.length && template.has(normName(d.name))) d.weekdays = [...template.get(normName(d.name))];
     }
     s.migrations.planWeekdays = true;
+  }
+  if (!s.migrations.planWeekdaysFix) {
+    // Erste Zuordnung war falsch (Mo Chest 1 … Fr Leg). Nur Tage korrigieren, die noch
+    // genau die alte Zuordnung haben – selbst geänderte Wochentage bleiben unangetastet.
+    const wrong = { 'chest day 1': 1, 'back day 1': 2, 'chest day 2': 3, 'back day 2': 4, 'leg day': 5 };
+    const template = new Map(myPlanDays().map((d) => [normName(d.name), d.weekdays]));
+    for (const d of s.plan.days) {
+      const key = normName(d.name);
+      if (wrong[key] && d.weekdays.length === 1 && d.weekdays[0] === wrong[key]) d.weekdays = [...template.get(key)];
+    }
+    // Plan nach Wochentag sortieren (Tage ohne Wochentag ans Ende)
+    const first = (d) => (d.weekdays.length ? Math.min(...d.weekdays) : 99);
+    s.plan.days.sort((a, b) => first(a) - first(b));
+    s.migrations.planWeekdaysFix = true;
   }
   return s;
 }
@@ -153,6 +167,10 @@ export function lastPerformance(exerciseId, name, beforeSessionId = null) {
   return null;
 }
 
+export function myPlanDays() {
+  return myPlanDaysUnsorted().sort((a, b) => a.weekdays[0] - b.weekdays[0]);
+}
+
 export function newExercise(partial = {}) {
   return { id: uid(), name: '', sets: 3, repMin: 8, repMax: 12, weight: null, rest: 120, notes: '', ...partial };
 }
@@ -174,14 +192,14 @@ function ex(name, sets, reps, weight, extra = {}) {
   });
 }
 
-export function myPlanDays() {
+function myPlanDaysUnsorted() {
   // Pause 0 = Supersatz: direkt weiter zur nächsten Übung, kein Pausen-Timer.
   // (Lokal statt Modul-Konstante, weil defaultState() schon beim Laden des Moduls läuft.)
   const SUPERSET = { rest: 0 };
   return [
     newDay({
       name: 'Chest Day 1',
-      weekdays: [1],
+      weekdays: [2],
       exercises: [
         ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
         ex('Kurzhantel Schrägbankdrücken', 2, 7, 30, { rest: 180, notes: 'Gewicht pro Hantel' }),
@@ -193,7 +211,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Back Day 1',
-      weekdays: [2],
+      weekdays: [1],
       exercises: [
         ex('Kreuzheben', 2, 10, 120, { rest: 180 }),
         ex('Latzug', 2, 10, 72),
@@ -206,7 +224,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Chest Day 2',
-      weekdays: [3],
+      weekdays: [5],
       exercises: [
         ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
         ex('Chest Press Uni', 2, 7, 101, { rest: 180 }),
@@ -231,7 +249,7 @@ export function myPlanDays() {
     }),
     newDay({
       name: 'Leg Day',
-      weekdays: [5],
+      weekdays: [3],
       exercises: [
         ex('Beinbeuger', 2, 8, 80),
         ex('Kniebeugen', 2, 8, 75),
