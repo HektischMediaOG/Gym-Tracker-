@@ -206,5 +206,15 @@ export function myPlanDays() {
         ex('Reverse Grip Curls', 2, 10, 35),
       ],
     }),
+    newDay({
+      name: 'Leg Day',
+      exercises: [
+        ex('Beinbeuger', 2, 8, 80),
+        ex('Kniebeugen', 2, 8, 75),
+        ex('Beinstrecker', 2, 10, 100),
+        ex('Wadenheben', 2, 8, 95),
+        ex('Upright Rows', 2, null, 55),
+      ],
+    }),
   ];
 }

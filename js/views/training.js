@@ -46,6 +46,12 @@ function setsSummary(sets) {
     .join(' · ');
 }
 
+// Tage aus der Vorlage, die (nach Name) noch nicht im Plan sind
+function missingPlanDays() {
+  const have = new Set(state.plan.days.map((d) => normName(d.name)));
+  return myPlanDays().filter((d) => !have.has(normName(d.name)));
+}
+
 export function todaysDays(date = today()) {
   const wd = isoWeekday(date);
   return state.plan.days.filter((d) => d.weekdays.includes(wd));
@@ -77,7 +83,7 @@ export function renderPlan() {
     : `<section class="card empty">
         <h3>Noch kein Trainingsplan</h3>
         <p>Leg für jeden Trainingstag die Übungen mit Sätzen, Wiederholungs-Spanne und Startgewicht an. Beim Training werden dann die Werte vom letzten Mal vorausgefüllt.</p>
-        <button class="btn ghost block" data-action="loadMyPlan">Meinen Plan laden (Chest/Back Day 1 + 2)</button>
+        <button class="btn ghost block" data-action="loadMyPlan">Meinen Plan laden (Chest, Back, Leg Day)</button>
       </section>`;
 
   return `${subnav('plan')}${activeBanner()}
@@ -86,7 +92,7 @@ export function renderPlan() {
       <button class="btn block" data-action="addDay">+ Trainingstag</button>
       <button class="btn ghost block" data-action="startWorkout" data-day="">Freies Training</button>
     </div>
-    ${days.length && !days.some((d) => d.name === 'Chest Day 1') ? '<button class="btn ghost small block mt" data-action="loadMyPlan">Meinen Plan (Chest/Back Day 1 + 2) hinzufügen</button>' : ''}`;
+    ${days.length && missingPlanDays().length ? `<button class="btn ghost small block mt" data-action="loadMyPlan">Fehlende Tage aus meinem Plan hinzufügen (${missingPlanDays().map((d) => esc(d.name)).join(', ')})</button>` : ''}`;
 }
 
 export function renderDayEditor(id) {
@@ -363,8 +369,9 @@ export const actions = {
     navigate(`#/plan/${d.id}`);
   },
   loadMyPlan() {
-    state.plan.days.push(...myPlanDays());
-    toast('Plan geladen – jetzt noch Wochentage und Leg Day eintragen');
+    const missing = missingPlanDays();
+    state.plan.days.push(...missing);
+    toast(`${missing.length} Trainingstage hinzugefügt – jetzt noch Wochentage eintragen`);
   },
   deleteDay(el) {
     const d = dayOf(el);
