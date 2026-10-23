@@ -1,4 +1,4 @@
-import { state, findDay, lastPerformance, newDay, newExercise, exampleDays } from '../store.js';
+import { state, findDay, lastPerformance, newDay, newExercise, myPlanDays } from '../store.js';
 import { suggestNext, e1rm, sessionVolume } from '../calc.js';
 import { esc, uid, today, addDays, parseNum, fmtNum, fmtDate, fmtDateRelative, isoWeekday, WEEKDAYS_SHORT, normName, round, fmtInput } from '../util.js';
 import { lineChart } from '../chart.js';
@@ -25,6 +25,11 @@ function repRange(ex) {
   if (!ex.repMin && !ex.repMax) return '';
   if (!ex.repMax || ex.repMin === ex.repMax) return `${ex.repMin || ex.repMax}`;
   return `${ex.repMin || '?'}–${ex.repMax}`;
+}
+
+function setsLabel(ex) {
+  const range = repRange(ex);
+  return range ? `${ex.sets || '?'} × ${range}` : `${ex.sets || '?'} Sätze`;
 }
 
 function fmtRest(sec) {
@@ -56,7 +61,7 @@ export function renderPlan() {
           const wd = d.weekdays.length ? [...d.weekdays].sort().map((w) => WEEKDAYS_SHORT[w - 1]).join(', ') : 'kein fester Tag';
           const exList = d.exercises.length
             ? `<ul class="ex-mini">${d.exercises
-                .map((e) => `<li><span>${esc(e.name || 'Ohne Namen')}</span><span class="muted">${e.sets || '?'} × ${repRange(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
+                .map((e) => `<li><span>${esc(e.name || 'Ohne Namen')}</span><span class="muted">${setsLabel(e)}${e.weight ? ` · ${fmtNum(e.weight, 2)} kg` : ''}</span></li>`)
                 .join('')}</ul>`
             : '<p class="muted">Noch keine Übungen.</p>';
           return `<section class="card">
@@ -72,7 +77,7 @@ export function renderPlan() {
     : `<section class="card empty">
         <h3>Noch kein Trainingsplan</h3>
         <p>Leg für jeden Trainingstag die Übungen mit Sätzen, Wiederholungs-Spanne und Startgewicht an. Beim Training werden dann die Werte vom letzten Mal vorausgefüllt.</p>
-        <button class="btn ghost block" data-action="loadExample">Beispiel laden (Push/Pull zum Anpassen)</button>
+        <button class="btn ghost block" data-action="loadMyPlan">Meinen Plan laden (Chest/Back Day 1 + 2)</button>
       </section>`;
 
   return `${subnav('plan')}${activeBanner()}
@@ -80,7 +85,8 @@ export function renderPlan() {
     <div class="row gap">
       <button class="btn block" data-action="addDay">+ Trainingstag</button>
       <button class="btn ghost block" data-action="startWorkout" data-day="">Freies Training</button>
-    </div>`;
+    </div>
+    ${days.length && !days.some((d) => d.name === 'Chest Day 1') ? '<button class="btn ghost small block mt" data-action="loadMyPlan">Meinen Plan (Chest/Back Day 1 + 2) hinzufügen</button>' : ''}`;
 }
 
 export function renderDayEditor(id) {
@@ -111,7 +117,7 @@ export function renderDayEditor(id) {
           ${f('weight', 'kg', 'inputmode="decimal" placeholder="–"')}
         </div>
         <div class="grid2">
-          ${f('rest', 'Pause (Sek.)', 'inputmode="numeric"')}
+          ${f('rest', 'Pause (Sek., 0 = Supersatz)', 'inputmode="numeric"')}
           ${f('notes', 'Notiz', 'type="text" placeholder="z. B. Sitz Stufe 4"')}
         </div>
       </section>`;
@@ -181,7 +187,7 @@ export function renderWorkout() {
           </div>`
         )
         .join('');
-      const meta = [t.sets && `${t.sets} × ${repRange(t)}`, t.rest && `Pause ${fmtRest(t.rest)}`].filter(Boolean).join(' · ');
+      const meta = [t.sets && setsLabel(t), t.rest === 0 ? 'Supersatz → direkt weiter' : t.rest && `Pause ${fmtRest(t.rest)}`].filter(Boolean).join(' · ');
       return `<section class="card">
         <div class="card-head">
           <div>
@@ -190,7 +196,7 @@ export function renderWorkout() {
           </div>
           <button class="icon-btn danger" data-action="removeSessionEx" data-x="${xi}" aria-label="Übung entfernen">✕</button>
         </div>
-        ${ex.last ? `<p class="small muted">Letztes Mal (${fmtDateRelative(ex.last.date)}): ${esc(ex.last.summary)}</p>` : '<p class="small muted">Erstes Mal – Startgewicht eintragen.</p>'}
+        ${ex.last ? `<p class="small muted">Letztes Mal (${fmtDateRelative(ex.last.date)}): ${esc(ex.last.summary)}</p>` : `<p class="small muted">${ex.sets.some((x) => x.weight) ? 'Erstes Mal – Werte aus deinem Plan.' : 'Erstes Mal – Startgewicht eintragen.'}</p>`}
         ${hint}
         ${t.notes ? `<p class="small note">${esc(t.notes)}</p>` : ''}
         <div class="sets">${rows}</div>
@@ -356,9 +362,9 @@ export const actions = {
     state.plan.days.push(d);
     navigate(`#/plan/${d.id}`);
   },
-  loadExample() {
-    state.plan.days.push(...exampleDays());
-    toast('Beispielplan geladen – Gewichte und Übungen anpassen');
+  loadMyPlan() {
+    state.plan.days.push(...myPlanDays());
+    toast('Plan geladen – jetzt noch Wochentage und Leg Day eintragen');
   },
   deleteDay(el) {
     const d = dayOf(el);
@@ -429,7 +435,8 @@ export const actions = {
     if (set.done) {
       if (set.reps === null || set.reps === undefined) set.reps = ex.target?.repMin ?? null;
       const isLast = ex.sets.every((s) => s.done);
-      startRestTimer(ex.target?.rest || 90, isLast ? `${ex.name} fertig` : `${ex.name} · Satz ${Number(el.dataset.s) + 2}`);
+      // Pause 0 = Supersatz: kein Timer
+      startRestTimer(ex.target?.rest ?? 90, isLast ? `${ex.name} fertig` : `${ex.name} · Satz ${Number(el.dataset.s) + 2}`);
     }
   },
   addSet(el) {

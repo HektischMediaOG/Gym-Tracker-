@@ -252,7 +252,7 @@ export function suggestNext(planEx, lastSets, increment = 2.5) {
   const targetSets = planEx.sets || 3;
   const done = (lastSets || []).filter((s) => s.done && s.reps > 0);
   if (!done.length) {
-    return { weight: planEx.weight ?? null, reps: repMin, kind: 'start' };
+    return { weight: planEx.weight ?? null, reps: planEx.repMax ?? planEx.repMin ?? null, kind: 'start' };
   }
   const top = Math.max(...done.map((s) => s.weight || 0));
   const atTop = done.filter((s) => (s.weight || 0) === top);

@@ -19,7 +19,7 @@ export function defaultState() {
       adjustments: [], // {date, from, to, observed, note}
     },
     settings: { increment: 2.5, adaptiveWindow: 21 },
-    plan: { days: [] },
+    plan: { days: myPlanDays() },
     sessions: [],
     activeSession: null,
     weights: [], // {date, kg}
@@ -142,28 +142,68 @@ export function newDay(partial = {}) {
   return { id: uid(), name: 'Neuer Trainingstag', weekdays: [], exercises: [], ...partial };
 }
 
-export function exampleDays() {
+// Wdh-Spanne für die doppelte Progression: die notierte Wdh-Zahl ist das obere Ende,
+// das untere liegt 2 darunter. Erst wenn alle Sätze oben ankommen, steigt das Gewicht.
+function ex(name, sets, reps, weight, extra = {}) {
+  return newExercise({
+    name,
+    sets,
+    repMin: reps ? Math.max(reps - 2, 5) : null,
+    repMax: reps || null,
+    weight: weight ?? null,
+    ...extra,
+  });
+}
+
+export function myPlanDays() {
+  // Pause 0 = Supersatz: direkt weiter zur nächsten Übung, kein Pausen-Timer.
+  // (Lokal statt Modul-Konstante, weil defaultState() schon beim Laden des Moduls läuft.)
+  const SUPERSET = { rest: 0 };
   return [
     newDay({
-      name: 'Push',
-      weekdays: [1],
+      name: 'Chest Day 1',
       exercises: [
-        newExercise({ name: 'Bankdrücken', sets: 3, repMin: 6, repMax: 8, rest: 180 }),
-        newExercise({ name: 'Schrägbankdrücken Kurzhantel', sets: 3, repMin: 8, repMax: 12 }),
-        newExercise({ name: 'Schulterdrücken', sets: 3, repMin: 8, repMax: 10 }),
-        newExercise({ name: 'Seitheben', sets: 3, repMin: 12, repMax: 15, rest: 90 }),
-        newExercise({ name: 'Trizepsdrücken am Kabel', sets: 3, repMin: 10, repMax: 12, rest: 90 }),
+        ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
+        ex('Kurzhantel Schrägbankdrücken', 2, 7, 30, { rest: 180, notes: 'Gewicht pro Hantel' }),
+        ex('Butterfly Maschine', 2, 12, 60),
+        ex('Kurzhantel Schulterdrücken', 2, 8, 24, { ...SUPERSET, notes: 'Supersatz mit Seitheben · Gewicht pro Hantel' }),
+        ex('Seitheben', 2, 10, 8),
+        ex('Trizepsdrücken', 3, 10, 65),
       ],
     }),
     newDay({
-      name: 'Pull',
-      weekdays: [3],
+      name: 'Back Day 1',
       exercises: [
-        newExercise({ name: 'Klimmzüge', sets: 3, repMin: 6, repMax: 10, weight: 0, rest: 180 }),
-        newExercise({ name: 'Langhantelrudern', sets: 3, repMin: 8, repMax: 10 }),
-        newExercise({ name: 'Latzug eng', sets: 3, repMin: 10, repMax: 12 }),
-        newExercise({ name: 'Face Pulls', sets: 3, repMin: 12, repMax: 15, rest: 90 }),
-        newExercise({ name: 'Bizepscurls', sets: 3, repMin: 10, repMax: 12, rest: 90 }),
+        ex('Kreuzheben', 2, 10, 120, { rest: 180 }),
+        ex('Latzug', 2, 10, 72),
+        ex('Face Pulls', 2, 15, 75, { ...SUPERSET, notes: 'Supersatz mit Seitheben' }),
+        ex('Seitheben', 2, 10, 8),
+        ex('Hammer Curls', 2, 8, 16, { notes: 'Gewicht pro Hantel' }),
+        ex('Unterarm Curls', 2, 10, 75, { ...SUPERSET, notes: 'Supersatz mit dem Dreh-Gerät' }),
+        ex('Unterarm Dreh-Gerät', 2, null, null, { notes: 'Name, Wdh und Gewicht bitte anpassen' }),
+      ],
+    }),
+    newDay({
+      name: 'Chest Day 2',
+      exercises: [
+        ex('Dips', 2, null, 0, { notes: 'Körpergewicht, bis zum Versagen' }),
+        ex('Chest Press Uni', 2, 7, 101, { rest: 180 }),
+        ex('Butterfly Maschine', 2, 10, 55),
+        ex('Overhead Dumbbell Press', 2, 7, 24, { ...SUPERSET, notes: 'Supersatz mit Seitheben · Gewicht pro Hantel' }),
+        ex('Seitheben', 2, 10, 10),
+        ex('Overhead Trizepsdrücken', 3, 10, 57),
+        ex('Crunch Maschine', 3, 8, null),
+      ],
+    }),
+    newDay({
+      name: 'Back Day 2',
+      exercises: [
+        ex('Latzug Maschine', 2, 10, 110),
+        ex('Kabelrudern breit', 2, 10, 77),
+        ex('Face Pulls', 2, 15, 80, { ...SUPERSET, notes: 'Supersatz mit Seitheben' }),
+        ex('Seitheben', 2, 10, 8),
+        ex('Preacher Curls', 3, 9, 50),
+        ex('Reverse Grip Curls', 2, 10, 35),
       ],
     }),
   ];

@@ -95,7 +95,7 @@ test('Gewichtstrend per Regression', () => {
 
 test('Doppelte Progression', () => {
   const ex = { sets: 3, repMin: 8, repMax: 12, weight: 60 };
-  assert.deepEqual(suggestNext(ex, [], 2.5), { weight: 60, reps: 8, kind: 'start' });
+  assert.deepEqual(suggestNext(ex, [], 2.5), { weight: 60, reps: 12, kind: 'start' });
   const hit = [12, 12, 12].map((r) => ({ weight: 60, reps: r, done: true }));
   assert.deepEqual(suggestNext(ex, hit, 2.5), { weight: 62.5, reps: 8, kind: 'increase' });
   const miss = [12, 11, 9].map((r) => ({ weight: 60, reps: r, done: true }));
