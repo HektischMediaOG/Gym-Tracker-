@@ -28,7 +28,7 @@ export function defaultState() {
     foodLibrary: [], // {id, name, kcal, protein, carbs, fat} je 100 g
     incompleteDays: [], // Tage, die nicht in die Anpassung einfließen sollen
     news: { seen: [] }, // IDs bereits angezeigter Studien
-    migrations: { planWeekdays: true, planWeekdaysFix: true },
+    migrations: { planWeekdays: true, planWeekdaysFix: true, renameForearmRotation: true },
   };
 }
 
@@ -70,6 +70,18 @@ function migrate(s) {
     const first = (d) => (d.weekdays.length ? Math.min(...d.weekdays) : 99);
     s.plan.days.sort((a, b) => first(a) - first(b));
     s.migrations.planWeekdaysFix = true;
+  }
+  if (!s.migrations.renameForearmRotation) {
+    // Platzhalter "Unterarm Dreh-Gerät" hat jetzt seinen richtigen Namen – in Plan und Verlauf umbenennen
+    const rename = (e) => {
+      if (e.name === 'Unterarm Dreh-Gerät') e.name = 'Unterarm-Rotation mit Kurzhantel';
+      if (e.notes === 'Name, Wdh und Gewicht bitte anpassen') e.notes = 'Kurzhanteln hängen lassen, Hand nach innen und außen drehen – Wdh und Gewicht bitte anpassen';
+      if (e.notes === 'Supersatz mit dem Dreh-Gerät') e.notes = 'Supersatz mit Unterarm-Rotation';
+    };
+    for (const d of s.plan.days) d.exercises.forEach(rename);
+    for (const x of s.sessions) x.exercises.forEach(rename);
+    if (s.activeSession) s.activeSession.exercises.forEach(rename);
+    s.migrations.renameForearmRotation = true;
   }
   return s;
 }
@@ -219,8 +231,8 @@ function myPlanDaysUnsorted() {
         ex('Face Pulls', 2, 15, 75, { ...SUPERSET, notes: 'Supersatz mit Seitheben' }),
         ex('Seitheben', 2, 10, 8),
         ex('Hammer Curls', 2, 8, 16, { notes: 'Gewicht pro Hantel' }),
-        ex('Unterarm Curls', 2, 10, 75, { ...SUPERSET, notes: 'Supersatz mit dem Dreh-Gerät' }),
-        ex('Unterarm Dreh-Gerät', 2, null, null, { notes: 'Name, Wdh und Gewicht bitte anpassen' }),
+        ex('Unterarm Curls', 2, 10, 75, { ...SUPERSET, notes: 'Supersatz mit Unterarm-Rotation' }),
+        ex('Unterarm-Rotation mit Kurzhantel', 2, null, null, { notes: 'Kurzhanteln hängen lassen, Hand nach innen und außen drehen – Wdh und Gewicht bitte anpassen' }),
       ],
     }),
     newDay({

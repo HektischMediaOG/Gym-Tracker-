@@ -17,7 +17,7 @@ const EXERCISES = {
   'Face Pulls': 'Face Pulls',
   'Hammer Curls': 'Hammer Curls',
   'Unterarm Curls': 'Forearm Curls',
-  'Unterarm Dreh-Gerät': 'Forearm Roller',
+  'Unterarm-Rotation mit Kurzhantel': 'Dumbbell Pronation/Supination',
   'Chest Press Uni': 'Chest Press Uni',
   'Overhead Dumbbell Press': 'Overhead Dumbbell Press',
   'Overhead Trizepsdrücken': 'Overhead Triceps Press',
@@ -38,8 +38,9 @@ const NOTES = {
   'Gewicht pro Hantel': 'Weight per dumbbell',
   'Supersatz mit Seitheben · Gewicht pro Hantel': 'Superset with lateral raises · weight per dumbbell',
   'Supersatz mit Seitheben': 'Superset with lateral raises',
-  'Supersatz mit dem Dreh-Gerät': 'Superset with the forearm roller',
-  'Name, Wdh und Gewicht bitte anpassen': 'Please adjust name, reps and weight',
+  'Supersatz mit Unterarm-Rotation': 'Superset with pronation/supination',
+  'Kurzhanteln hängen lassen, Hand nach innen und außen drehen – Wdh und Gewicht bitte anpassen':
+    'Let dumbbells hang, rotate hands in and out – please adjust reps and weight',
 };
 
 function lookup(table) {
