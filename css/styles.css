@@ -310,3 +310,16 @@ summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 0.9
   .grid3 { grid-template-columns: 1fr 1fr; }
 }
 .pick-list { display: grid; gap: 8px; margin: 10px 0 4px; }
+
+/* News */
+.badge { display: inline-block; border-radius: 6px; padding: 2px 7px; font-size: 0.72rem; font-weight: 700; background: var(--surface-2); color: var(--text); }
+.badge.soft { color: var(--muted); }
+.badge.new { background: var(--accent); color: var(--accent-ink); }
+.badge.type-meta-analyse { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.badge.type-systematischer-review { background: color-mix(in srgb, var(--protein) 22%, var(--surface)); }
+.badge.type-rct { background: color-mix(in srgb, var(--carbs) 22%, var(--surface)); }
+.news-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.news-item h3 { font-size: 1rem; line-height: 1.35; }
+.news-item h3 a { text-decoration: none; }
+.abstract { line-height: 1.5; }
+.link { color: var(--accent); font-weight: 700; display: inline-block; margin-top: 6px; }

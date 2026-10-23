@@ -26,6 +26,7 @@ export function defaultState() {
     foods: [], // {id, date, meal, name, amount, kcal, protein, carbs, fat}
     foodLibrary: [], // {id, name, kcal, protein, carbs, fat} je 100 g
     incompleteDays: [], // Tage, die nicht in die Anpassung einfließen sollen
+    news: { seen: [] }, // IDs bereits angezeigter Studien
     migrations: { planWeekdays: true },
   };
 }

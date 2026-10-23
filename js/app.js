@@ -5,8 +5,9 @@ import * as food from './views/food.js';
 import * as weight from './views/weight.js';
 import * as goals from './views/goals.js';
 import * as settings from './views/settings.js';
+import * as news from './views/news.js';
 
-const views = { home, training, food, weight, goals, settings };
+const views = { home, training, food, weight, goals, settings, news };
 
 // Route → [View, Render-Funktion, Tab]
 const routes = {
@@ -21,6 +22,7 @@ const routes = {
   weight: [weight, 'render', 'weight'],
   goals: [goals, 'render', 'goals'],
   settings: [settings, 'render', 'settings'],
+  news: [news, 'render', 'home'],
 };
 
 const actions = {};
@@ -203,6 +205,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 
 renderShell();
 render();
+news.loadNews();
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   navigator.serviceWorker.register('./sw.js').catch((e) => console.warn('Service Worker nicht registriert', e));

@@ -6,6 +6,7 @@ import { todaysDays } from './training.js';
 import { currentTargets } from './food.js';
 import { adaptiveAnalysis, lastAdjustment } from './goals.js';
 import { daysBetween, normName } from '../util.js';
+import { unseenCount } from './news.js';
 
 export function render() {
   const d = today();
@@ -90,10 +91,16 @@ export function render() {
     }
   }
 
+  const fresh = unseenCount();
+  const newsCard = `<a class="card news-teaser" href="#/news">
+    <div class="card-head"><h3>Neue Studien</h3>${fresh ? `<span class="badge new">${fresh} neu</span>` : '<span class="muted small">Ansehen →</span>'}</div>
+    <p class="muted small">Krafttraining, Ernährung und Regeneration – Meta-Analysen, Reviews und RCTs.</p>
+  </a>`;
+
   const goalLine = `<p class="muted small center">Ziel: ${esc(GOALS[state.goal.type].label)}${state.goal.ratePct ? ` · ${fmtSigned(state.goal.ratePct, 2)} %/Woche` : ''}</p>`;
 
   return `<h1 class="page-title">${fmtDate(d, { weekday: 'long', day: 'numeric', month: 'long' })}</h1>
-    ${trainingCard}${missedCard}${checkin}${foodCard}${weightCard}${goalLine}`;
+    ${trainingCard}${missedCard}${checkin}${foodCard}${weightCard}${newsCard}${goalLine}`;
 }
 
 function startButton(day, label, style = 'primary') {

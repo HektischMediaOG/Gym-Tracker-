@@ -1,5 +1,5 @@
 // Offline-Cache für die App-Hülle. Bei Änderungen an Dateien VERSION erhöhen.
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CACHE = `gym-tracker-${VERSION}`;
 const ASSETS = [
   './',
@@ -17,6 +17,7 @@ const ASSETS = [
   './js/views/weight.js',
   './js/views/goals.js',
   './js/views/settings.js',
+  './js/views/news.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/apple-touch-icon.png',
@@ -38,6 +39,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
+  // News: erst Netzwerk (aktuell), offline den letzten Stand
+  if (new URL(req.url).pathname.endsWith('/news.json')) {
+    event.respondWith(
+      caches.open(CACHE).then((cache) =>
+        fetch(req)
+          .then((res) => {
+            if (res.ok) cache.put(req, res.clone());
+            return res;
+          })
+          .catch(() => cache.match(req, { ignoreSearch: true }))
+      )
+    );
+    return;
+  }
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {
       const cached = await cache.match(req, { ignoreSearch: true });

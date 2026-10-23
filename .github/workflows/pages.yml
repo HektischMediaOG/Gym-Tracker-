@@ -4,6 +4,9 @@ on:
   push:
     branches: [main, claude/gym-progress-tracker-app-0650l5]
   workflow_dispatch:
+  # Täglich neu veröffentlichen, damit der News-Bereich aktuelle Studien hat
+  schedule:
+    - cron: '17 4 * * *'
 
 permissions:
   contents: read
@@ -32,10 +35,18 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Neue Studien abrufen
+        continue-on-error: true
+        run: node scripts/fetch-news.mjs news.json
       - name: Nur App-Dateien veröffentlichen
         run: |
           mkdir _site
           cp -r index.html manifest.webmanifest sw.js css js icons _site/
+          # Fällt der Abruf aus, zeigt die App einen Hinweis statt eines Fehlers
+          if [ -f news.json ]; then cp news.json _site/; else echo '{"items":[],"errors":["Abruf fehlgeschlagen"]}' > _site/news.json; fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
